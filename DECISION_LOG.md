@@ -110,4 +110,42 @@ Each entry is a bullet list under a dated heading:
 - **Reason:** The Initial Submission planned Optuna-based hyperparameter tuning across 4 candidate models. Running full cross-validation inside every single Optuna trial is computationally expensive at this scale. A single fixed validation set lets each trial be scored once; the test set stays completely untouched until final evaluation. Class balance was confirmed to hold tightly across all three splits (Train 54.85%/45.15%, Validation 54.23%/45.77%, Test 55.14%/44.86%, all within about 1 percentage point of the overall average), so the extra three-way split doesn't introduce any new imbalance risk.
 - **Alternatives considered:** Two way train/test split only, relying on `TimeSeriesSplit` cross validation for tuning. Kept as an optional extra robustness check later if time permits, but not the primary tuning approach, given the compute cost across 4 models and many trials.
 
+## Stage 4: Feature Engineering
+
+### [2026-09-19] Temporal features kept despite weak standalone signal
+- **Made by:** Nayana
+- **Decision:** Engineer `order_hour`, `order_dayofweek`, `order_month`, `order_is_weekend`, and `order_is_holiday_season` and keep them in the feature set, even though EDA found these patterns are essentially flat.
+- **Reason:** Checked the late-rate spread for each feature on the training split directly, and all four came back under 2.5 percentage points (day of week 1.5pp, month 2.4pp, weekend 0.5pp, holiday season 0.1pp), confirming the EDA finding rather than contradicting it. A weak standalone signal doesn't rule out the model picking up a useful interaction effect (for example holiday season combined with a specific shipping mode), so the features are kept, but we don't expect them to rank as important on their own.
+- **Alternatives considered:** Dropping the temporal features entirely. Rejected, since the Initial Submission commits to engineering them and there's no real cost to keeping a weak feature, only a potential cost to dropping one that might still help in combination with others.
+
+### [2026-09-19] Days for shipment (scheduled) dropped after confirming perfect collinearity with Shipping Mode
+- **Made by:** Nayana
+- **Decision:** Drop `Days for shipment (scheduled)` from the feature set, but only after using it to build a new feature, `sales_per_scheduled_day`. Also add `is_express_shipping`, a binary flag for First Class or Same Day shipping.
+- **Reason:** A crosstab of `Shipping Mode` against `Days for shipment (scheduled)` on the training data showed a perfect 1:1 mapping with zero exceptions: First Class always 1 day, Same Day always 0 days, Second Class always 2 days, Standard Class always 4 days. This is stronger than the "near-deterministic" relationship flagged in EDA, it's total redundancy. Keeping both columns would destabilize Logistic Regression's coefficients, which matters since interpretability is the reason we're using it as a baseline. `sales_per_scheduled_day` needed the raw column to exist first, so the drop happens after that feature is built, not before.
+- **Alternatives considered:** Keeping both columns and letting regularization sort it out. Rejected once the relationship was confirmed to be perfect rather than just strong, since perfect collinearity is a real problem for Logistic Regression specifically, not just a minor inefficiency.
+
+### [2026-09-19] Feature engineering pipeline ordering bug caught and fixed
+- **Made by:** Nayana
+- **Decision:** Corrected the order of operations in the shipping features step: build `sales_per_scheduled_day` from `Days for shipment (scheduled)` first, then drop the column. An earlier draft had this backwards.
+- **Reason:** The first version of this step dropped `Days for shipment (scheduled)` before the feature that depends on it was built, which silently produced a feature matrix missing both `sales_per_scheduled_day` and `is_express_shipping`, with no error raised at the time. This was only caught by explicitly checking the final column list against what was expected in the last assembly step, three notebooks downstream from where the bug was introduced.
+- **Alternatives considered:** Not applicable, this is a bug fix rather than a choice between options. Logged mainly because catching and fixing it is itself worth recording, and because it's a reminder to explicitly verify expected columns exist right after any step that both derives a feature from a column and removes that same column.
+
+### [2026-09-19] Geographic target encoding fit strictly on training data
+- **Made by:** Nayana
+- **Decision:** Target-encode `Order Country` and `Order Region` as average delay rate per category, fitting the encoding map only on the training split. Validation and test rows use the training map, with any unseen category falling back to the training set's global mean late rate.
+- **Reason:** Fitting an encoding on the full dataset before splitting would leak future information into the training data, exactly the kind of mistake the project's leakage-prevention plan is meant to catch. Checked coverage directly: all 164 countries seen in training also appear in validation and test, so the fallback logic is correctly in place but never actually had to trigger.
+- **Alternatives considered:** Fitting the encoding on the full dataset before splitting. Rejected as a clear leakage risk. One-hot encoding `Order Country` instead of target encoding. Rejected due to the high cardinality (164 values), which would blow up the feature space for little benefit given the target encoding already captures the delay-rate signal directly.
+
+### [2026-09-19] Remaining categorical encoding: one-hot for low cardinality, frequency for Category Name
+- **Made by:** Nayana
+- **Decision:** One-hot encode `Shipping Mode`, `Customer Segment`, and `Type` (4, 3, and 4 unique values respectively). Frequency-encode `Category Name` using the same train-only-fit rule as the geographic encoding.
+- **Reason:** Low cardinality fields suit one-hot encoding without creating too many columns. `Category Name` was confirmed reliable as the canonical category feature in Stage 3 after resolving the department-scoping question, so frequency encoding it directly is safe. Column alignment across train, validation, and test was handled explicitly by reindexing validation and test to the training set's columns, to guard against a category being missing from one split.
+- **Alternatives considered:** One-hot encoding `Category Name` as well. Rejected due to its higher cardinality (~50 categories) compared to the other categoricals, where frequency encoding gives a more compact, still-informative representation.
+
+### [2026-09-19] Final feature set locked in: dropped columns, scaling approach, and unscaled priority reference
+- **Made by:** Nayana
+- **Decision:** Drop raw columns now superseded by engineered or encoded versions (`Order Id`, `Order Country`, `Order Region`, `Order City`, `Order State`, `Category Name`, `Category Id`, `order date (DateOrders)`, `Delivery Status`). Scale all numeric features with `StandardScaler` fit on the training set only. Keep a separate unscaled copy of `priority_value_component` for the Streamlit app's priority ranking display, since a standardized value can be negative and wouldn't be meaningful to show an operations user as an order's value.
+- **Reason:** The raw columns are either identifiers, post-outcome fields, or fully replaced by an engineered feature, so keeping them would be redundant or unsafe. Scaling is needed for Logistic Regression's coefficients to be comparable across features; tree-based models don't strictly need it but aren't hurt by it either, so one scaled version is used for the whole feature set rather than maintaining two. The final matrix has 28 features plus the target across 46,026 training orders, 7,890 validation orders, and 11,836 test orders, with no missing values in any split.
+- **Alternatives considered:** Maintaining separate scaled and unscaled feature sets for tree-based versus linear models. Rejected as unnecessary complexity, since scaling doesn't harm tree-based model performance.
+
 <!-- Add new entries above this line -->
