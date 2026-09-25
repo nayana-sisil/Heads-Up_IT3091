@@ -1,7 +1,7 @@
 # Data
 data/raw/*
 !data/raw/.gitkeep
-*.csv
+
 *.tsv
 
 # Python
@@ -31,3 +31,4 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+*.joblib
