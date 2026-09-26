@@ -110,6 +110,8 @@ Each entry is a bullet list under a dated heading:
 - **Reason:** The Initial Submission planned Optuna-based hyperparameter tuning across 4 candidate models. Running full cross-validation inside every single Optuna trial is computationally expensive at this scale. A single fixed validation set lets each trial be scored once; the test set stays completely untouched until final evaluation. Class balance was confirmed to hold tightly across all three splits (Train 54.85%/45.15%, Validation 54.23%/45.77%, Test 55.14%/44.86%, all within about 1 percentage point of the overall average), so the extra three-way split doesn't introduce any new imbalance risk.
 - **Alternatives considered:** Two way train/test split only, relying on `TimeSeriesSplit` cross validation for tuning. Kept as an optional extra robustness check later if time permits, but not the primary tuning approach, given the compute cost across 4 models and many trials.
 
+---
+
 ## Stage 4: Feature Engineering
 
 ### [2026-09-19] Temporal features kept despite weak standalone signal
@@ -147,5 +149,45 @@ Each entry is a bullet list under a dated heading:
 - **Decision:** Drop raw columns now superseded by engineered or encoded versions (`Order Id`, `Order Country`, `Order Region`, `Order City`, `Order State`, `Category Name`, `Category Id`, `order date (DateOrders)`, `Delivery Status`). Scale all numeric features with `StandardScaler` fit on the training set only. Keep a separate unscaled copy of `priority_value_component` for the Streamlit app's priority ranking display, since a standardized value can be negative and wouldn't be meaningful to show an operations user as an order's value.
 - **Reason:** The raw columns are either identifiers, post-outcome fields, or fully replaced by an engineered feature, so keeping them would be redundant or unsafe. Scaling is needed for Logistic Regression's coefficients to be comparable across features; tree-based models don't strictly need it but aren't hurt by it either, so one scaled version is used for the whole feature set rather than maintaining two. The final matrix has 28 features plus the target across 46,026 training orders, 7,890 validation orders, and 11,836 test orders, with no missing values in any split.
 - **Alternatives considered:** Maintaining separate scaled and unscaled feature sets for tree-based versus linear models. Rejected as unnecessary complexity, since scaling doesn't harm tree-based model performance.
+
+---
+
+## Stage 5/6: Baseline & Model Development
+
+### [2026-09-20] Baseline rule fixed: dropped the region condition
+- **Made by:** Nayana
+- **Decision:** Changed the baseline rule to flag "Late" based on Shipping Mode alone, instead of Shipping Mode OR Region.
+- **Reason:** The original rule used both conditions, but since the overall late rate is already above 50%, almost every region also sat above 50%, so the rule ended up predicting "Late" for every single order. Checking the classification report caught this. Shipping Mode alone gives a real, working baseline (Recall 0.53, Precision 0.84).
+- **Alternatives considered:** Raising the threshold instead of dropping region. Went with dropping region since Shipping Mode alone already gives clean discrimination without needing an arbitrary new cutoff.
+
+### [2026-09-20] SVM convergence issue fixed
+- **Made by:** Nayana
+- **Decision:** Increased LinearSVC's max_iter and set dual=False.
+- **Reason:** The first run threw a "failed to converge" warning, and gave a result that looked very different from Logistic Regression. After fixing convergence, SVM's numbers came out almost identical to Logistic Regression, confirming the earlier result was just an unfinished optimization, not a real difference between the two models.
+- **Alternatives considered:** None, this was a straightforward bug fix once the warning was noticed.
+
+### [2026-09-20] Random Forest and LightGBM's built-in feature importance not trusted at face value
+- **Made by:** Nayana
+- **Decision:** Don't rely on Random Forest's or LightGBM's default feature importance charts for interpretability claims. Used permutation importance as a cross-check for Random Forest instead.
+- **Reason:** Both charts ranked `order_hour` unexpectedly high and Shipping Mode unexpectedly low, contradicting EDA and every other model. This is a known bias, both measures favor features with many possible values over simple yes/no features, regardless of real predictive value. Permutation importance partly fixed this (Shipping Mode came back to the top) but `order_hour` still showed up as genuinely important, which is now an open question for the SHAP analysis in Stage 8.
+- **Alternatives considered:** Trusting the default charts as-is. Rejected once the mismatch with EDA and other models was noticed.
+
+### [2026-09-20] Boosting comparison: classic Gradient Boosting is not weaker than modern boosting here
+- **Made by:** Nayana
+- **Decision:** Corrected our assumption that older boosting methods would perform worse. Only AdaBoost actually underperforms; sklearn's classic Gradient Boosting matches XGBoost, LightGBM, and CatBoost on every metric.
+- **Reason:** We expected a "boosting getting better over time" story, but the numbers show a different pattern: AdaBoost to Gradient Boosting was a real jump in performance, but Gradient Boosting to the newer libraries (XGBoost/LightGBM/CatBoost) barely changed the results. The newer libraries are likely faster to train, not more accurate, at least on this dataset.
+- **Alternatives considered:** None, this is a correction based on what the results actually showed.
+
+### [2026-09-20] Voting and Stacking ensembles not used going forward
+- **Made by:** Nayana
+- **Decision:** Built both a Voting Classifier and a Stacking Classifier from the top 4 individual models, but decided not to carry either forward for tuning.
+- **Reason:** Both ensembles scored lower on Recall than Random Forest alone. The top 4 models picked were all tree or boosting models with no linear model mixed in, so they likely made similar mistakes, meaning averaging or combining them didn't add much. The Stacking model's own weights confirmed this: it leaned heavily on CatBoost (the weakest of the 4 on Recall) and barely used XGBoost, showing it was optimizing for something other than what we actually care about.
+- **Alternatives considered:** Picking a more diverse set of 4 models by hand instead of automatically picking the top scorers. Not done for now, noted as something to try later if time allows, since it would need re-running both ensembles again.
+
+### [2026-09-20] Final candidates chosen for Stage 8 tuning: Random Forest and the Neural Network
+- **Made by:** Nayana
+- **Decision:** Carry Random Forest and the Neural Network forward as the main models to tune with Optuna. XGBoost stays in as a backup third option.
+- **Reason:** Random Forest currently has the best Recall (0.62), the metric we care about most. The Neural Network has the best ROC-AUC and Precision, meaning it may catch up on Recall once we tune the decision threshold in Stage 8. XGBoost, LightGBM, and CatBoost all score about the same, so picking XGBoost as a backup instead of all three keeps things simpler without losing much.
+- **Alternatives considered:** Tuning all remaining models. Rejected as more work than needed given three of them (XGBoost/LightGBM/CatBoost) score almost identically.
 
 <!-- Add new entries above this line -->
