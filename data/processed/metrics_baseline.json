@@ -1,5 +1,5 @@
 {
-  "model": "Rule based baseline",
+  "model": "Rule-based baseline",
   "recall": 0.5349380696424398,
   "precision": 0.8390762463343109,
   "f1": 0.6533466533466533,
