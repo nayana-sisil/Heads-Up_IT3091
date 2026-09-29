@@ -13,7 +13,7 @@ venv/
 env/
 
 # Model artifacts
-models/*.pkl
+
 models/*.joblib
 *.h5
 
