@@ -1,0 +1,12 @@
+{
+  "model": "random_forest_tuned",
+  "selection_rule": "highest threshold with validation Recall >= 0.8",
+  "threshold": 0.38,
+  "validation_recall_at_threshold": 0.813975227856976,
+  "validation_precision_at_threshold": 0.6329274940941305,
+  "validation_share_flagged": 0.6974651457541191,
+  "cost_optimal_threshold_for_reference": 0.11,
+  "cost_false_negative": 3.0,
+  "cost_false_positive": 1.0,
+  "note": "cost-optimal threshold flags ~97% of orders (degenerate), see notebook section 3"
+}
