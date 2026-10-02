@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useReport } from '../../data'
 import { Bars, Card, LineChart, ChartLegend, Skeleton } from '../../components/ui'
-import { Callout, PageHead, Related, Stat, Steps, Tbl, fig, pc } from '../../components/tech'
+import { Note, Callout, PageHead, Related, Stat, Steps, Tbl, fig, pc } from '../../components/tech'
 import { num } from '../../format'
 import { DotPlot, Timeline, Dots100, Tag } from '../../components/viz'
 
@@ -12,7 +12,7 @@ export function Models() {
   const base = b.find((x: any) => x.model.startsWith('Rule'))
   return (
     <div className="grid">
-      <PageHead stage="Stages 5 and 6" nb="notebook 04_model_development" big="Twelve models, and a one line rule is a tough opponent." line="Twelve models were compared against a one line rule. The best ones are close to each other, and the rule is a tougher opponent than expected." chips={[{ icon: 'models', k: '12', l: 'models compared' }, { icon: 'code', k: '0.727', l: 'rule baseline AUC' }, { icon: 'brain', k: '0.765', l: 'best AUC (neural net)' }]} />
+      <PageHead stage="Stages 5 and 6" nb="notebook 04_model_development" big="Twelve models, and a one line rule is a tough opponent." line="The best models are close to each other, and the rule is tougher than expected." chips={[{ icon: 'models', k: '12', l: 'models compared' }, { icon: 'code', k: '0.727', l: 'rule baseline AUC' }, { icon: 'brain', k: '0.765', l: 'best AUC (neural net)' }]} />
       <div className="grid g3">
         <Stat label="Baseline rule" value={`Recall ${base.recall.toFixed(2)}`} sub={`Predict "late" for any shipping option that was late more than half the time in training (First and Second Class). ROC-AUC ${base.roc_auc.toFixed(3)}`} />
         <Stat label="Best ROC-AUC" value={best('roc_auc').toFixed(3)} sub="Neural network, closely followed by LightGBM, CatBoost, Stacking and Gradient Boosting" />
@@ -20,7 +20,7 @@ export function Models() {
       </div>
       <Card title="All models on the validation set" lead="Default 0.5 threshold, before any tuning. The best value in each column is blue.">
         <Tbl head={['Model', 'Recall', 'Precision', 'F1', 'ROC-AUC', 'PR-AUC']} num={[1, 2, 3, 4, 5]} rows={b.map((x: any) => [x.model, cell(x, 'recall'), cell(x, 'precision'), cell(x, 'f1'), cell(x, 'roc_auc'), cell(x, 'pr_auc')])} />
-        <p className="note" style={{ marginTop: 8 }}>Gradient Boosting, LightGBM, CatBoost, Random Forest, XGBoost, the Neural Network and both ensembles all sit inside a narrow band (ROC-AUC 0.758 to 0.765). That tells us the signal in this data is limited, mostly the shipping option.</p>
+        <Note>Gradient Boosting, LightGBM, CatBoost, Random Forest, XGBoost, the Neural Network and both ensembles all sit inside a narrow band (ROC-AUC 0.758 to 0.765). That tells us the signal in this data is limited, mostly the shipping option.</Note>
       </Card>
       <div className="two">
         <Card title="Recall by model" lead="Share of really late orders caught at the default 0.5 line. The dashed line is the one line rule.">
@@ -65,7 +65,7 @@ export function Tuning() {
   const mseries = [{ name: 'Random Forest', color: '#2a6fdb', values: r.models['Random Forest'].val.matched.map((x: any) => x.precision) }, { name: 'XGBoost', color: '#c8691a', values: r.models.XGBoost.val.matched.map((x: any) => x.precision) }, { name: 'Neural Network', color: '#1b9e8a', values: r.nn_matched.map((x: any) => x.precision) }]
   return (
     <div className="grid">
-      <PageHead stage="Stages 7 and 8" nb="notebook 05_hyperparameter_tuning_and_evaluation" big="Tuning helped little. The flag line comes from a Recall target of 0.80." line="Tuning helped less than expected, all three tuned models tie at the operating point, and the threshold came from a Recall target because a cost based threshold flagged almost every order." chips={[{ icon: 'target', k: '0.80', l: 'Recall target' }, { icon: 'dial', k: '0.38', l: 'Random Forest threshold' }, { icon: 'dial', k: '0.39', l: 'XGBoost threshold' }]} />
+      <PageHead stage="Stages 7 and 8" nb="notebook 05_hyperparameter_tuning_and_evaluation" big="Tuning helped little. The flag line comes from a Recall target of 0.80." line="All three tuned models tie where we operate. A cost based threshold flagged almost every order." chips={[{ icon: 'target', k: '0.80', l: 'Recall target' }, { icon: 'dial', k: '0.38', l: 'Random Forest threshold' }, { icon: 'dial', k: '0.39', l: 'XGBoost threshold' }]} />
       <div className="three-cols grid g3">
         {(['Random Forest', 'XGBoost'] as const).map(k => <Card key={k} title={`${k} settings`} lead="Best of the Optuna search, picked on validation.">
           <div className="chips">{Object.entries(r.models[k].params).map(([a, v]) => <span key={a} className="kvchip"><i>{a}</i><b className="num">{typeof v === 'number' ? (Number.isInteger(v) ? String(v) : (v as number).toPrecision(3)) : String(v)}</b></span>)}</div></Card>)}
@@ -78,7 +78,7 @@ export function Tuning() {
       <Card title="Fair comparison at the same Recall" lead="Precision of each tuned model when all are forced to catch the same share of late orders (validation set).">
         <LineChart series={mseries} height={260} xTitle="Recall target" yTitle="Precision" xFmt={x => (0.6 + 0.3 * x).toFixed(2)} ticks={[0, 1 / 6, 2 / 6, .5, 4 / 6, 5 / 6, 1]} tipTitle={s => `Recall target ${s}`} />
         <ChartLegend series={mseries} />
-        <p className="note" style={{ marginTop: 8 }}>At Recall 0.80 the three models are within 0.5 points of each other (about 0.64 Precision). So the choice between them is not critical. The Neural Network did not improve with tuning.</p>
+        <Note>At Recall 0.80 the three models are within 0.5 points of each other (about 0.64 Precision). So the choice between them is not critical. The Neural Network did not improve with tuning.</Note>
       </Card>
       <Card title="Threshold explorer" lead="Move the line and watch the trade off. Everything is on validation unless you switch, and the test view is for evaluation only.">
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
@@ -102,13 +102,13 @@ export function Tuning() {
         </div>
         <LineChart series={series} height={280} marker={frac} xTitle="Threshold" yTitle="Share" xFmt={x => (0.05 + 0.9 * x).toFixed(2)} tipTitle={s => `Threshold ${s}`} />
         <ChartLegend series={series} />
-        <p className="note" style={{ marginTop: 8 }}>The rule used: the highest threshold where validation Recall is at least 0.80. That gives {r.models['Random Forest'].threshold} for the Random Forest and {r.models.XGBoost.threshold} for XGBoost.</p>
+        <Note>The rule used: the highest threshold where validation Recall is at least 0.80. That gives {r.models['Random Forest'].threshold} for the Random Forest and {r.models.XGBoost.threshold} for XGBoost.</Note>
       </Card>
       <div className="two">
         <Card title="Why not the cost based threshold" lead="A missed late order costs 3, a false alarm costs 1.">
           <Tbl head={['Choice (validation, Random Forest)', 'Cost']} num={[1]} rows={[
             ['Flag nothing', '12,837'], ['Default 0.5', '5,544'], [`Cost minimum at threshold ${r.threshold_notes.cost_threshold}`, '3,399'], ['Flag everything', '3,611']]} />
-          <p className="note" style={{ marginTop: 8 }}>With 55% late orders, the cheapest policy is to flag almost everything (97% of orders). That is no use to an ops team. So the threshold comes from a Recall target of 0.80 instead.</p>
+          <Note>With 55% late orders, the cheapest policy is to flag almost everything (97% of orders). That is no use to an ops team. So the threshold comes from a Recall target of 0.80 instead.</Note>
         </Card>
         <Card title="What drove the search" lead="Which settings mattered most to the XGBoost search.">{fig('xgb_optuna_importances.png', 'XGBoost parameter importances')}</Card>
       </div>

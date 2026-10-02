@@ -1,3 +1,4 @@
+import { Note } from '../components/tech'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { checkNew, getLookups, get } from '../api'
 import { useApp } from '../state'
@@ -76,7 +77,7 @@ export default function Check() {
           {err && <p className="note" style={{ color: 'var(--crit)', marginTop: 8 }}>{err}</p>}
         </Card>
         <Card title="What this tool can and cannot do">
-          <p className="note" style={{ margin: 0 }}>It predicts one order at the moment it is placed. It does not forecast how many orders will come next week. The model learned from orders placed between 2015 and 2018, so it can drift if shipping rules change. Countries or products it never saw fall back to training averages.</p>
+          <Note>It predicts one order at the moment it is placed. It does not forecast how many orders will come next week. The model learned from orders placed between 2015 and 2018, so it can drift if shipping rules change. Countries or products it never saw fall back to training averages.</Note>
         </Card>
       </div>
       <div className="grid" style={{ alignContent: 'start' }}>

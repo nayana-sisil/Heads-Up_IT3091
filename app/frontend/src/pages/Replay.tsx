@@ -1,3 +1,4 @@
+import { Note } from '../components/tech'
 import { useEffect, useState } from 'react'
 import { useGet } from '../api'
 import { OrderRow } from '../types'
@@ -40,7 +41,7 @@ export default function Replay() {
             <div><div className="eyebrow">Critical + High</div><div className="kpi num">{num(w.critical)} + {num(w.high)}</div></div>
             <div><div className="eyebrow">Revenue at risk</div><div className="kpi num" style={{ color: 'var(--brand)' }}>{moneyK(w.revenue_at_risk)}</div></div>
           </div>
-          <p className="note" style={{ marginTop: 14 }}>The first and last weeks hold only part of a week of orders. Late revenue that really happened that week: <b className="num">{money(w.late_revenue)}</b>. The expected value above tracks it closely, which is what a good priority score should do.</p>
+          <Note>The first and last weeks hold only part of a week of orders. Late revenue that really happened that week: <b className="num">{money(w.late_revenue)}</b>. The expected value above tracks it closely, which is what a good priority score should do.</Note>
         </Card>
         <Card title="Top of the queue that week">{top ? top.items.map(o => <OrderCard key={o.id} o={o} onOpen={() => setOpen(o.id)} />) : <Skeleton />}</Card>
       </div>

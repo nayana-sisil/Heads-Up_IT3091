@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useData, useReport } from '../../data'
 import { Card, Skeleton } from '../../components/ui'
-import { Callout, PageHead, Tbl, pc } from '../../components/tech'
+import { Note, Callout, PageHead, Tbl, pc } from '../../components/tech'
 import { useApp } from '../../state'
 import { Tag, IconCards } from '../../components/viz'
 
@@ -25,7 +25,8 @@ export function Decisions() {
           return <article key={i} className="dentry" style={{ ['--c' as any]: col }}>
             <div className="dh"><Tag color={col}>{e.stage.split(':')[0]}</Tag><span className="dim num">{e.date}</span>{e.made_by && <span className="dim">· {e.made_by}</span>}</div>
             <h4>{e.title}</h4>
-            <p><b>Decision.</b> {e.decision}</p><p><b>Reason.</b> {e.reason}</p>{e.alternatives && <p className="dim"><b>Alternatives.</b> {e.alternatives}</p>}
+            <p className="dline">{e.decision.length > 220 ? e.decision.slice(0, e.decision.lastIndexOf(' ', 220)) + '…' : e.decision}</p>
+            <Note label="Full decision, reason and alternatives"><p><b>Decision.</b> {e.decision}</p><p><b>Reason.</b> {e.reason}</p>{e.alternatives && <p><b>Alternatives.</b> {e.alternatives}</p>}</Note>
           </article>
         })}
         {shown.length === 0 && <p className="note">Nothing matches.</p>}
@@ -53,7 +54,7 @@ export function About() {
       </div>
       <Card title="About this site">
         <p style={{ marginTop: 0 }}>The "Use it" side is the decision support tool. The "How it was built" side explains every stage of the project with numbers read from the project's own data and models.</p>
-        <p className="note" style={{ marginBottom: 0 }}>AI assistance: the web app was built with help from Claude (Anthropic). Edit this line to match your course's AI use declaration.</p>
+        <Note>AI assistance: the web app was built with help from Claude (Anthropic). Edit this line to match your course's AI use declaration.</Note>
       </Card>
     </div>
   )

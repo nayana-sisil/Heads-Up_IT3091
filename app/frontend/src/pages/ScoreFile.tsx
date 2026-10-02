@@ -1,3 +1,4 @@
+import { StatTile } from '../components/viz'
 import { useState } from 'react'
 import { scoreFile, getLookups } from '../api'
 import { CheckInput } from '../types'
@@ -82,10 +83,10 @@ export default function ScoreFile() {
       </Card>
       {out && <>
         <div className="grid g4">
-          <Card><div className="eyebrow">Scored</div><div className="kpi num">{num(out.length)}</div><div className="muted">orders</div></Card>
-          <Card><div className="eyebrow">Likely late</div><div className="kpi num">{num(out.filter(o => o.flag).length)}</div><div className="muted">{pct(out.filter(o => o.flag).length / Math.max(out.length, 1))} of the file</div></Card>
-          <Card><div className="eyebrow">Act today or this week</div><div className="kpi num">{count('Critical') + count('High')}</div><div className="muted">{count('Critical')} critical, {count('High')} high</div></Card>
-          <Card><div className="eyebrow">Money at risk</div><div className="kpi num">{moneyK(out.reduce((a, o) => a + o.priority, 0))}</div><div className="muted">chance late × value</div></Card>
+          <StatTile label="Scored" value={<>{num(out.length)}</>} sub={<>orders</>} />
+          <StatTile label="Likely late" value={<>{num(out.filter(o => o.flag).length)}</>} sub={<>{pct(out.filter(o => o.flag).length / Math.max(out.length, 1))} of the file</>} />
+          <StatTile label="Act today or this week" value={<>{count('Critical') + count('High')}</>} sub={<>{count('Critical')} critical, {count('High')} high</>} />
+          <StatTile label="Money at risk" value={<>{moneyK(out.reduce((a, o) => a + o.priority, 0))}</>} sub={<>chance late × value</>} />
         </div>
         <Card title="Ranked list" lead="Highest priority first." right={<div className="tabs">{['All', 'Critical', 'High', 'Standard'].map(t => <button key={t} className={tier === t ? 'on' : ''} onClick={() => { setTier(t); setLimit(25) }}>{t}</button>)}</div>}>
           <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>#</th><th>Order</th><th>Tier</th><th>Chance late</th><th>Value</th><th>Shipping</th><th>Placed</th><th>Country</th></tr></thead><tbody>

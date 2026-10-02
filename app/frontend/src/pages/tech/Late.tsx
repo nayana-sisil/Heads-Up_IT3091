@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useReport } from '../../data'
 import { useGet } from '../../api'
 import { Bars, Card, Skeleton, TierChip } from '../../components/ui'
-import { Callout, PageHead, Related, Stat, Steps, Tbl, pc } from '../../components/tech'
+import { Note, Callout, PageHead, Related, Stat, Steps, Tbl, pc } from '../../components/tech'
 import { money, num } from '../../format'
 import { useApp } from '../../state'
 import { DotPlot, Flow, Dots100 } from '../../components/viz'
@@ -14,7 +14,7 @@ export function Priority() {
   const order: [string, string][] = [['Random order', 'Random'], ['Sales only', 'Sales only'], ['Risk only', 'Risk only'], ['Simple rule', 'Simple rule × Sales'], ['Heads Up', 'Heads Up (risk × Sales)'], ['Oracle', 'Perfect (ceiling)']]
   return (
     <div className="grid">
-      <PageHead stage="Stage 9" nb="notebook 06_shipment_prioritization" big="Chance of late × order value puts the right orders at the top." line="Chance of late × order value puts the right orders at the top. It beats ranking by risk alone or by money alone, but a simple shipping rule ties it." chips={[{ icon: 'money', k: '36%', l: 'of late revenue in top 10%' }, { icon: 'users', k: '11%', l: 'with random picking' }, { icon: 'rank', k: '48%', l: 'best possible (oracle)' }]} />
+      <PageHead stage="Stage 9" nb="notebook 06_shipment_prioritization" big="Chance of late × order value puts the right orders at the top." line="It beats ranking by risk alone or by money alone, but a simple shipping rule ties it." chips={[{ icon: 'money', k: '36%', l: 'of late revenue in top 10%' }, { icon: 'users', k: '11%', l: 'with random picking' }, { icon: 'rank', k: '48%', l: 'best possible (oracle)' }]} />
       <div className="two">
         <Card title="The priority score" lead="One line, easy to explain.">
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-.02em', margin: '4px 0 12px' }}>priority = chance of late<sup>α</sup> × order value</div>
@@ -23,7 +23,7 @@ export function Priority() {
             { title: 'Order value (Sales)', text: 'Not profit, so loss making orders are not counted as negative value.' },
             { title: 'α = 1', text: 'Risk and money count equally. The Team capacity page lets you try other weights.' },
           ]} />
-          <p className="note" style={{ marginTop: 10 }}>Example: an order with a 90% chance of being late and a value of $1,000 scores 900. A 90% order worth $100 scores 90.</p>
+          <Note>Example: an order with a 90% chance of being late and a value of $1,000 scores 900. A 90% order worth $100 scores 90.</Note>
         </Card>
         <Card title="How we judged it" lead="Same review budget for every method. Which one reaches the most late revenue?">
           <p style={{ marginTop: 0 }}>We take the top 10% of orders from each ranking and add up the value of those that were really late. We also report precision: how many of the top orders were late. A perfect ranking is shown as a ceiling.</p>
@@ -35,7 +35,7 @@ export function Priority() {
         {(['validation', 'test'] as const).map(k => <Card key={k} title={`Top 10% queue, ${k} set (${m})`} lead="Share of late revenue reached. Higher is better.">
           <DotPlot min={0} max={0.55} fmt={v => pc(v, 0)} refLine={P[k]['Oracle'].revenue} refLabel="best possible" rows={order.filter(([key]) => key !== 'Oracle').map(([key, lab]) => ({ label: lab, value: P[k][key].revenue, color: key === 'Heads Up' ? 'var(--good)' : key === 'Random order' ? 'var(--std)' : undefined }))} />
           <div style={{ marginTop: 10 }}><div className="eyebrow" style={{ marginBottom: 6 }}>Top 100 orders, Heads Up</div><Dots100 size={18} cols={20} cats={[{ n: Math.round(P[k]['Heads Up'].precision * 100), color: 'var(--crit)', label: 'really late' }, { n: 100 - Math.round(P[k]['Heads Up'].precision * 100), color: 'var(--std)', label: 'on time' }]} /></div>
-          <p className="note" style={{ marginTop: 8 }}>Precision at the top: Heads Up {pc(P[k]['Heads Up'].precision, 0)}, risk only {pc(P[k]['Risk only'].precision, 0)}, sales only {pc(P[k]['Sales only'].precision, 0)}.</p>
+          <Note>Precision at the top: Heads Up {pc(P[k]['Heads Up'].precision, 0)}, risk only {pc(P[k]['Risk only'].precision, 0)}, sales only {pc(P[k]['Sales only'].precision, 0)}.</Note>
         </Card>)}
       </div>
       <Callout title="How to read this honestly">Risk only gets nearly every pick right, but they are small orders, so it reaches little money. Sales only picks big orders, but almost half are not late. Heads Up combines both. The simple rule (shipping option and the Same Day noon line, times Sales) is a tie. We keep the model because it gives a separate chance and a reason for every order, which a rule cannot.</Callout>
@@ -49,7 +49,7 @@ export function Priority() {
       </Card>
       <Card title="Action tiers" lead={`Cut points were set on validation orders: Critical is the top 10% by priority score (${money(cut.critical_min)} or more), High is the next 20% (${money(cut.high_min)} or more). Orders below the risk threshold (${t.config.risk_threshold}) cannot be High.`}>
         <Tbl head={['Tier', 'Set', 'Orders', 'Share', 'Late rate', 'Avg order', 'Late revenue held']} num={[2, 3, 4, 5, 6]} rows={(['validation', 'test'] as const).flatMap(k => ['Critical', 'High', 'Standard'].map(tn => { const x = t.tiers[k][tn]; return [<TierChip tier={tn} />, k, num(x.orders), pc(x.share_orders, 1), pc(x.late_rate, 0), money(x.avg_sales), pc(x.share_late_revenue, 0)] }))} />
-        <p className="note" style={{ marginTop: 8 }}>On the test set the Critical share drops from 10% to about 5% because the average order value fell from about $612 to $401. The ranking still works, but the cut points should be refreshed on recent data.</p>
+        <Note>On the test set the Critical share drops from 10% to about 5% because the average order value fell from about $612 to $401. The ranking still works, but the cut points should be refreshed on recent data.</Note>
         <button className="btn" style={{ marginTop: 10 }} onClick={() => go('capacity')}>Try other review budgets and risk weights</button>
       </Card>
       <Related stage="Stage 9" />
@@ -61,7 +61,7 @@ export function System() {
   const { go } = useApp()
   return (
     <div className="grid">
-      <PageHead stage="Stage 10" nb="app/ in the repo" big="The model runs inside your browser, so nothing can break during a demo." line="Everything in this site runs from the same files as the notebooks. The model runs inside your browser, so there is no server to break during a demo." chips={[{ icon: 'server', k: '0.88 MB', l: 'live model file' }, { icon: 'check', k: '16', l: 'automated API tests' }, { icon: 'code', k: '28', l: 'features rebuilt in JS' }]} />
+      <PageHead stage="Stage 10" nb="app/ in the repo" big="The model runs inside your browser, so nothing can break during a demo." line="Everything here runs from the same files as the notebooks." chips={[{ icon: 'server', k: '0.88 MB', l: 'live model file' }, { icon: 'check', k: '16', l: 'automated API tests' }, { icon: 'code', k: '28', l: 'features rebuilt in JS' }]} />
       <Card title="How the pieces fit" lead="From raw data to what you see on screen.">
         <Flow nodes={[
           { icon: 'data', title: 'Raw data', text: 'DataCo CSV, 180,519 lines', color: 'var(--std)' },

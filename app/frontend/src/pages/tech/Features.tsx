@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../../data'
 import { Card, Skeleton } from '../../components/ui'
-import { Callout, PageHead, Related, Tbl } from '../../components/tech'
+import { Note, Callout, PageHead, Related, Tbl } from '../../components/tech'
 import { buildFeatures, MODES, OrderInput } from '../../static/features'
 import { countryEn } from '../../static/names'
 
@@ -40,12 +40,12 @@ export function Features() {
   const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(3)
   return (
     <div className="grid">
-      <PageHead stage="Stage 4" nb="notebook 03_feature_engineering" big="28 simple numbers per order, learned from the training set only." line="The model sees 28 numbers per order. A few simple rules create them, and every lookup table is learned from the training set only." chips={[{ icon: 'layers', k: '28', l: 'inputs' }, { icon: 'clean', k: '10', l: 'standardized' }, { icon: 'trust', k: '0', l: 'peeks at the future' }]} />
+      <PageHead stage="Stage 4" nb="notebook 03_feature_engineering" big="28 simple numbers per order, learned from the training set only." line="A few simple rules create them, and every lookup table comes from training data only." chips={[{ icon: 'layers', k: '28', l: 'inputs' }, { icon: 'clean', k: '10', l: 'standardized' }, { icon: 'trust', k: '0', l: 'peeks at the future' }]} />
       <div className="two">
         <Card title="The 28 inputs" lead="Grouped by what they describe.">
           {GROUPS.map(g => <div key={g.group} style={{ marginBottom: 10 }}><div className="eyebrow" style={{ marginBottom: 4 }}>{g.group} ({g.items.length})</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{g.items.map(i => <span key={i[0]} className="chip" title={i[1]}>{i[0]}</span>)}</div></div>)}
-          <p className="note" style={{ margin: 0 }}>Hover a name for its meaning. Ten inputs are standardized (mean 0, spread 1, fitted on train). Targets are never an input.</p>
+          <Note>Hover a name for its meaning. Ten inputs are standardized (mean 0, spread 1, fitted on train). Targets are never an input.</Note>
         </Card>
         <Card title="Rules that matter" lead="What was decided and why.">
           <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8 }}>
@@ -73,7 +73,7 @@ export function Features() {
           })}
         </div>
         {built.assumed.length > 0 && <p className="note" style={{ marginTop: 10 }}>Not given, so assumed: {built.assumed.join('; ')}.</p>}
-        <p className="note" style={{ marginTop: 6 }}>Country late rate used here: {(val('country_delay_rate') * 100).toFixed(1)}%. Scaled values use the training mean and spread.</p>
+        <Note>Country late rate used here: {(val('country_delay_rate') * 100).toFixed(1)}%. Scaled values use the training mean and spread.</Note>
       </Card>
       <Callout title="Fitted on train only">The country and region rates, the product frequencies and the scaler are all computed on the training set and then applied unchanged to validation, test and every new order. That is what keeps the evaluation honest.</Callout>
       <Related stage="Stage 4" />

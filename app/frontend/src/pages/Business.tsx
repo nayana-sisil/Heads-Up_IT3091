@@ -1,6 +1,6 @@
 import { useGet } from '../api'
 import { Card, Skeleton, TierChip } from '../components/ui'
-import { Callout, Steps, Tbl, pc } from '../components/tech'
+import { Note, Callout, Steps, Tbl, pc } from '../components/tech'
 import { useApp } from '../state'
 import { money } from '../format'
 import { Icon } from '../components/Icons'
@@ -52,7 +52,7 @@ export default function Business() {
             <div className="ss">{what}</div>
           </div>))}
       </div>
-      <p className="note" style={{ margin: '-4px 4px 0' }}>Late share of each tier on the 11,836 test orders. Tiers come from the priority score, with cut points set on validation orders.</p>
+      <Note>Late share of each tier on the 11,836 test orders. Tiers come from the priority score, with cut points set on validation orders.</Note>
 
       <div className="sectitle">What it is worth</div>
       <div className="grid g2">

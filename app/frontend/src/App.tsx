@@ -23,6 +23,7 @@ const VIEW: Record<string, () => JSX.Element> = {
   problem: Problem, data: DataEda, prep: Prep, features: Features, models: Models, tuning: Tuning, explain: Explain, final: Final, priority: Priority, system: System,
   decisions: Decisions, about: About,
 }
+const COMPACT = ['check', 'file', 'handle', 'capacity', 'replay']
 const TAB: Record<string, string[]> = { use: ['home', 'check', 'file', 'handle'], built: ['problem', 'models', 'final', 'decisions'] }
 
 export default function App() {
@@ -50,7 +51,7 @@ export default function App() {
       </nav>
       <main className="main" style={{ ['--acc' as any]: cur.acc ?? 'var(--brand)' }}>
         <header className="top">
-          <div className="grow">{mode === 'built' ? <div className="crumb">How it was built · {cur.title}</div> : <><h1>{cur.title}</h1><div className="sub">{cur.sub}</div></>}</div>
+          <div className="grow"><div className="crumb">{mode === 'built' ? 'How it was built' : 'Use it'} · {cur.title}</div></div>
           {showCtl && <div className="seg" role="group" aria-label="Risk weight" title="How much risk counts compared with order value">
             {DIAL.map((d, i) => <button key={d.id} className={dial === i ? 'on' : ''} onClick={() => setAlpha(d.alpha)} title={d.hint}>{d.label}</button>)}
           </div>}
@@ -60,6 +61,7 @@ export default function App() {
           </select>
         </header>
         {mode === 'built' && <Stepper />}
+        {COMPACT.includes(cur.id) && <section className="phero compact"><div className="badge"><Icon name={cur.icon} size={15} />{cur.label}</div><h2>{cur.sub}</h2></section>}
         <View />
         {mode === 'built' && <PrevNext />}
       </main>

@@ -1,6 +1,6 @@
 import { useReport } from '../../data'
 import { Bars, Card, Skeleton } from '../../components/ui'
-import { Callout, Columns, PageHead, Related, Stat, Steps, Tbl, pc } from '../../components/tech'
+import { Note, Callout, Columns, PageHead, Related, Stat, Steps, Tbl, pc } from '../../components/tech'
 import { moneyK, num } from '../../format'
 import { Flow, Dots100, Heat } from '../../components/viz'
 
@@ -11,7 +11,7 @@ export function Problem() {
   return (
     <div className="grid">
       <PageHead stage="Stages 1 and 2" nb="README, DECISION_LOG, notebook 01" big="Warn about a late order the moment it is placed, then rank by money at stake."
-        line="That is the whole project in one sentence. One model gives the chance of late, and a second step turns it into a short list to act on."
+        line="One model gives the chance of late. A second step turns it into a short list to act on."
         chips={[{ icon: 'box', k: num(r.raw.orders), l: 'orders' }, { icon: 'clock', k: pc(e.late_rate, 0), l: 'arrive late' }, { icon: 'layers', k: '28', l: 'inputs per order' }]} />
       <Card title="Two lenses, one model" lead="Both lenses use the same predictions. Inputs are limited to facts known when the order is placed.">
         <Flow nodes={[
@@ -30,7 +30,7 @@ export function Problem() {
               <div className="val num">{num(t)}</div>
             </div>) })}
           <div className="legend" style={{ marginTop: 10 }}><span><i className="sw" style={{ background: 'var(--good)' }} />Target 0, not late</span><span><i className="sw" style={{ background: 'var(--crit)' }} />Target 1, late</span></div>
-          <p className="note" style={{ marginTop: 10 }}>Every status maps to exactly one target value. "Shipping canceled" ({pc(r.raw.canceled_share)} of lines) is coded 0 in the data, and we kept it as given after checking.</p>
+          <Note>Every status maps to exactly one target value. "Shipping canceled" ({pc(r.raw.canceled_share)} of lines) is coded 0 in the data, and we kept it as given after checking.</Note>
         </Card>
         <Card title="Out of 100 orders" lead="The split is close to balanced, so accuracy alone would not mislead us.">
           <Dots100 cats={[{ n: lateN, color: 'var(--crit)', label: 'arrive late' }, { n: 100 - lateN, color: 'var(--good)', label: 'arrive on time' }]} />
@@ -42,7 +42,7 @@ export function Problem() {
             {[1, 2, 3].map(i => <div key={i} style={{ flex: 1, height: 54, borderRadius: 10, background: 'var(--crit)', display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800 }}>{i === 2 ? 'missed late order = 3' : ''}</div>)}
             <div style={{ flex: 1, height: 18, borderRadius: 8, background: 'var(--high)' }} title="a false alarm costs 1" />
           </div>
-          <p className="note" style={{ margin: 0 }}>A missed late order costs {r.threshold_notes.cost_fn}. A false alarm costs {r.threshold_notes.cost_fp}, a quick check.</p>
+          <Note>A missed late order costs {r.threshold_notes.cost_fn}. A false alarm costs {r.threshold_notes.cost_fp}, a quick check.</Note>
         </Card>
         <Card title="How the reason changed">
           <Steps items={[
@@ -64,7 +64,7 @@ export function DataEda() {
   const hourItems = e.by_hour.map((h: any) => ({ label: h.name, value: h.late_rate, tip: `${h.name}:00, ${pc(h.late_rate)} late` }))
   return (
     <div className="grid">
-      <PageHead stage="Stage 2" nb="notebook 01_eda" big="Shipping option is the strongest signal. Calendar effects are flat." line="Shipping option is by far the strongest signal. Calendar effects are flat. Several fields had to be kept out because they are only known after delivery." chips={[{ icon: 'data', k: '53', l: 'columns' }, { icon: 'box', k: '65,752', l: 'orders' }, { icon: 'truck', k: '57 pts', l: 'best to worst shipping gap' }]} />
+      <PageHead stage="Stage 2" nb="notebook 01_eda" big="Shipping option is the strongest signal. Calendar effects are flat." line="Several fields were kept out because they are only known after delivery." chips={[{ icon: 'data', k: '53', l: 'columns' }, { icon: 'box', k: '65,752', l: 'orders' }, { icon: 'truck', k: '57 pts', l: 'best to worst shipping gap' }]} />
       <div className="grid g4">
         <Stat label="Order lines" value={num(raw.rows)} sub={`${raw.columns} columns`} />
         <Stat label="Unique orders" value={num(raw.orders)} sub={`${raw.lines_per_order.toFixed(2)} lines per order`} />
@@ -74,7 +74,7 @@ export function DataEda() {
       <div className="two">
         <Card title="Late rate by shipping option" lead="The strongest signal found. The gap between the best and worst is 57 points.">
           <Bars rows={e.by_mode.map((m: any) => ({ label: m.name, value: m.late_rate, sub: String(m.orders) }))} fmt={v => pc(v)} max={1} />
-          <p className="note" style={{ margin: '8px 0 0' }}>First Class is the slowest in practice: it is late {pc(e.by_mode[0].late_rate, 0)} of the time. Standard Class is late only {pc(e.by_mode[3].late_rate, 0)} of the time.</p>
+          <Note>First Class is the slowest in practice: it is late {pc(e.by_mode[0].late_rate, 0)} of the time. Standard Class is late only {pc(e.by_mode[3].late_rate, 0)} of the time.</Note>
         </Card>
         <Card title="Late rate by month" lead="Stable from 2015 to 2017. The orange bar is January 2018, the only 2018 month, which is too thin to hold out as a calendar year test.">
           <Columns items={monthItems} max={1} height={230} showEvery={3} rotate />
@@ -109,7 +109,7 @@ export function DataEda() {
       </div>
       <Card title="Leakage check" lead="Leakage means using information that would not exist at order time. Each field was classified before any modelling.">
         <Tbl head={['Field', 'Status', 'Why']} rows={e.leakage.map((l: any) => [l.field, <span className={`pill ${l.status}`}>{l.status}</span>, l.why])} />
-        <p className="note" style={{ marginTop: 8 }}>Sales and Benefit per order were cleared as safe. They are known at order time. Benefit has outliers (a data quality issue, not leakage), handled on the next page.</p>
+        <Note>Sales and Benefit per order were cleared as safe. They are known at order time. Benefit has outliers (a data quality issue, not leakage), handled on the next page.</Note>
       </Card>
       <Callout title="What this told us">Shipping option dominates. A simple rule built on it would be a tough baseline, and it was: see the Models page. Calendar effects are flat, so a time based split is safe but we do not need a calendar year cut off.</Callout>
       <Related stage="Stage 2" />
@@ -124,7 +124,7 @@ export function Prep() {
   const ben = e.benefit_hist.map((b: any) => ({ label: String(Math.round(b.lo)), value: b.n, color: b.hi <= e.benefit_p1 || b.lo >= e.benefit_p99 ? 'var(--crit)' : 'var(--brand)', tip: `$${Math.round(b.lo)} to $${Math.round(b.hi)}: ${num(b.n)} orders` }))
   return (
     <div className="grid">
-      <PageHead stage="Stage 3" nb="notebook 02_preprocessing" big="180,519 lines became 65,752 orders, split by time so the test set is the future." line="We turned 180,519 order lines into 65,752 orders, dropped one useless field, capped extreme profits, and split the data by time so the test set is the future." chips={[{ icon: 'layers', k: '46,026', l: 'train orders' }, { icon: 'dial', k: '7,890', l: 'validation orders' }, { icon: 'flag', k: '11,836', l: 'test orders' }]} />
+      <PageHead stage="Stage 3" nb="notebook 02_preprocessing" big="180,519 lines became 65,752 orders, split by time so the test set is the future." line="One useless field was dropped and extreme profits were capped." chips={[{ icon: 'layers', k: '46,026', l: 'train orders' }, { icon: 'dial', k: '7,890', l: 'validation orders' }, { icon: 'flag', k: '11,836', l: 'test orders' }]} />
       <Card title="From lines to orders to three sets" lead="Each step keeps only what the model can learn from.">
         <Flow nodes={[
           { icon: 'data', title: `${num(r.raw.rows)} lines`, text: 'The raw file. One row per item in a basket.', color: 'var(--std)' },
@@ -143,7 +143,7 @@ export function Prep() {
       <div className="two">
         <Card title="Profit outliers and capping" lead={`Profit per order runs from ${moneyK(Math.abs(raw0(r)))} loss upward. Red bars lie outside the 1st to 99th percentile and are capped.`}>
           <Columns items={ben} fmt={v => num(v)} height={210} showEvery={4} yTitle="Orders" />
-          <p className="note" style={{ margin: '8px 0 0' }}>{pc(e.benefit_outlier_share, 2)} of order lines are statistical outliers. Profit is capped at ${Math.round(e.benefit_p1)} and ${Math.round(e.benefit_p99)} for modelling. For ranking orders we use Sales, so a loss making order is not counted as negative value.</p>
+          <Note>{pc(e.benefit_outlier_share, 2)} of order lines are statistical outliers. Profit is capped at ${Math.round(e.benefit_p1)} and ${Math.round(e.benefit_p99)} for modelling. For ranking orders we use Sales, so a loss making order is not counted as negative value.</Note>
         </Card>
         <Card title="Dropped and kept" lead="Decisions with a recorded reason.">
           <Tbl head={['Item', 'Decision']} rows={[['Order Zipcode', `Dropped (${pc(r.raw.zipcode_missing_orders, 2)} missing)`], ['Country names', 'Checked: already consistent, no cleaning needed'], ['Category Id', 'Not used alone, it is scoped by department'], ['Days for shipment (scheduled)', 'Dropped later, a perfect copy of Shipping Mode']]} />
@@ -152,7 +152,7 @@ export function Prep() {
       <Card title="Chronological split" lead="The model is trained on the past and tested on the future, like real use. No order from a later date is ever used to learn about an earlier one.">
         <div className="timeline">{s.map((x: any, i: number) => <div key={x.name} style={{ flex: x.share, background: colors[i] }}>{x.name} {Math.round(x.share * 100)}%</div>)}</div>
         <Tbl head={['Set', 'Orders', 'From', 'To', 'Late share', 'Avg order value']} num={[1, 4, 5]} rows={s.map((x: any) => [x.name, num(x.orders), x.start, x.end, pc(x.late_rate, 1), '$' + Math.round(x.avg_sales)])} />
-        <p className="note" style={{ marginTop: 8 }}>Validation exists so tuning can run quickly without ever touching the test set. The test set is opened once. Note the average order value fell from about $591 in train to $401 in test, which we flag as a drift risk.</p>
+        <Note>Validation exists so tuning can run quickly without ever touching the test set. The test set is opened once. Note the average order value fell from about $591 in train to $401 in test, which we flag as a drift risk.</Note>
       </Card>
       <Related stage="Stage 3" />
     </div>

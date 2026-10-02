@@ -1,3 +1,6 @@
+import { Icon } from '../components/Icons'
+import { StatTile } from '../components/viz'
+import { Note } from '../components/tech'
 import { useGet } from '../api'
 import { Bars, CalibrationChart, Card, Skeleton } from '../components/ui'
 import { moneyK, num, pct } from '../format'
@@ -11,16 +14,17 @@ export default function Trust() {
   const op = te.operating_point, opv = v.operating_point
   return (
     <div className="grid">
-      <Card className="hero">
-        <div className="eyebrow">The honest summary</div>
-        <h2 style={{ margin: '4px 0 8px', fontSize: 24, letterSpacing: '-.02em', maxWidth: 760 }}>The model puts the right orders at the top. A simple shipping rule does almost as well.</h2>
-        <p className="muted" style={{ maxWidth: 760, margin: 0 }}>In the top 10% of the queue, Heads Up reaches {pct(te.schemes['Heads Up']['10'].revenue_reached, 1)} of late revenue on the test orders, against {pct(te.schemes['Simple rule']['10'].revenue_reached, 1)} for a two-line shipping rule. That is a tie. The model adds a separate chance for every order and a reason for each one, which a rule cannot give.</p>
-      </Card>
+      <section className="phero" style={{ ['--acc' as any]: 'var(--good)' }}>
+        <div className="wm" aria-hidden>✓</div>
+        <div className="badge"><Icon name="trust" size={15} />The honest summary</div>
+        <h2>The model puts the right orders at the top. A simple shipping rule does almost as well.</h2>
+        <p className="sub2">In the top 10% of the queue, Heads Up reaches {pct(te.schemes['Heads Up']['10'].revenue_reached, 1)} of late revenue on the test orders, against {pct(te.schemes['Simple rule']['10'].revenue_reached, 1)} for a two-line shipping rule. That is a tie. The model adds a separate chance for every order and a reason for each one, which a rule cannot give.</p>
+      </section>
       <div className="grid g4">
-        <Card><div className="eyebrow">Recall at the threshold</div><div className="kpi num">{pct(op.recall)}</div><div className="muted">of late orders caught (validation {pct(opv.recall)})</div></Card>
-        <Card><div className="eyebrow">Precision</div><div className="kpi num">{pct(op.precision)}</div><div className="muted">of flagged orders were late</div></Card>
-        <Card><div className="eyebrow">Orders flagged</div><div className="kpi num">{pct(op.flagged_share)}</div><div className="muted">of all orders (validation {pct(opv.flagged_share)})</div></Card>
-        <Card><div className="eyebrow">Ranking quality</div><div className="kpi num">{te.roc_auc.toFixed(3)}</div><div className="muted">ROC AUC on test (1.0 is perfect, 0.5 is a coin)</div></Card>
+        <StatTile label="Recall at the threshold" value={<>{pct(op.recall)}</>} sub={<>of late orders caught (validation {pct(opv.recall)})</>} />
+        <StatTile label="Precision" value={<>{pct(op.precision)}</>} sub={<>of flagged orders were late</>} />
+        <StatTile label="Orders flagged" value={<>{pct(op.flagged_share)}</>} sub={<>of all orders (validation {pct(opv.flagged_share)})</>} />
+        <StatTile label="Ranking quality" value={<>{te.roc_auc.toFixed(3)}</>} sub={<>ROC AUC on test (1.0 is perfect, 0.5 is a coin)</>} />
       </div>
       <div className="grid g2">
         <Card title="Top 10% queue: late revenue reached" lead="Each method reviews the same number of orders. Higher is better.">
@@ -31,7 +35,7 @@ export default function Trust() {
         <Card title="Can the chances be trusted?" lead="If the model says 80%, about 80 in 100 should be late. Lines near the dashed line are honest.">
           <CalibrationChart lines={calLines} />
           <div className="legend" style={{ marginTop: 4 }}><span><i className="dot" style={{ background: '#4f7dff' }} /> Validation</span><span><i className="dot" style={{ background: '#d98324' }} /> Test</span><span>Dashed line: perfect</span></div>
-          <p className="note" style={{ margin: '8px 0 0' }}>Every group sits within about 5 points of the dashed line, so the chances are honest enough to multiply by order value.</p>
+          <Note>Every group sits within about 5 points of the dashed line, so the chances are honest enough to multiply by order value.</Note>
         </Card>
       </div>
       <div className="grid g2">
@@ -41,7 +45,7 @@ export default function Trust() {
             {t.same_day_by_hour.map((h: any) => { const w = 272 / 24, ht = h.late_rate * 110; return <rect key={h.hour} x={44 + h.hour * w} y={135 - ht} width={w - 3} height={Math.max(ht, 1.5)} rx="2.5" fill={h.late_rate > .5 ? 'var(--crit)' : 'var(--good)'}><title>{`${h.hour}:00 · ${pct(h.late_rate)} late · ${h.orders} orders`}</title></rect> })}
             {[0, 6, 12, 18, 23].map(h => <text key={h} x={44 + h * (272 / 24) + 5} y="156" textAnchor="middle" style={{ fontSize: 11 }}>{h}h</text>)}
           </svg>
-          <p className="note" style={{ margin: '6px 0 0' }}>Before noon: never late. From noon: late about 96% of the time. This looks like a rule built into the dataset, so real operations may show a weaker effect.</p>
+          <Note>Before noon: never late. From noon: late about 96% of the time. This looks like a rule built into the dataset, so real operations may show a weaker effect.</Note>
         </Card>
         <Card title="What the model leans on" lead="Average push of each fact on the risk (SHAP, test orders).">
           <Bars rows={t.global_importance.slice(0, 8).map((g: any) => ({ label: g.label, value: g.value }))} fmt={x => x.toFixed(2)} />
@@ -55,7 +59,7 @@ export default function Trust() {
         </Card>
         <Card title="Watch out: order values fell" lead="Average order value in each period.">
           <Bars rows={t.sales_by_split.map((s: any) => ({ label: s.split, value: s.mean }))} fmt={x => '$' + Math.round(x)} />
-          <p className="note" style={{ margin: '6px 0 0' }}>Test orders are much smaller, so fewer of them reach the Critical tier. In real use the tier cut points need refreshing on recent data.</p>
+          <Note>Test orders are much smaller, so fewer of them reach the Critical tier. In real use the tier cut points need refreshing on recent data.</Note>
         </Card>
       </div>
       <Card title="How this app decides" lead="Settings come from the validation set. The test set was used once to check them.">

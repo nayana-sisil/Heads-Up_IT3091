@@ -1,3 +1,4 @@
+import { StatTile } from '../components/viz'
 import { useEffect, useState } from 'react'
 import { useGet } from '../api'
 import { Capacity as Cap } from '../types'
@@ -30,10 +31,10 @@ export default function Capacity() {
         <div className="note" style={{ display: 'flex', justifyContent: 'space-between' }}><span>1%</span><span>25%</span><span>50%</span></div>
       </Card>
       <div className="grid g4">
-        <Card><div className="eyebrow">Late revenue reached</div><div className="kpi num" style={{ color: 'var(--brand)' }}>{pct(c.revenue_reached, 1)}</div><div className="muted">{money(c.late_revenue_reached)} of {money(c.late_revenue_total)}</div></Card>
-        <Card><div className="eyebrow">Orders really late</div><div className="kpi num">{pct(c.precision)}</div><div className="muted">{num(c.wasted_reviews)} reviews would find nothing wrong</div></Card>
-        <Card><div className="eyebrow">Best possible</div><div className="kpi num">{pct(c.oracle_reached, 1)}</div><div className="muted">You reach {pct(c.revenue_reached / Math.max(c.oracle_reached, 1e-9))} of it</div></Card>
-        <Card><div className="eyebrow">Versus picking by order value</div><div className="kpi num" style={{ color: at('Heads Up') >= at('Sales only') ? 'var(--good)' : 'var(--crit)' }}>{at('Heads Up') >= at('Sales only') ? '+' : ''}{((at('Heads Up') - at('Sales only')) * 100).toFixed(1)} pts</div><div className="muted">more late revenue reached</div></Card>
+        <StatTile label="Late revenue reached" value={<>{pct(c.revenue_reached, 1)}</>} sub={<>{money(c.late_revenue_reached)} of {money(c.late_revenue_total)}</>} color={'var(--brand)'} />
+        <StatTile label="Orders really late" value={<>{pct(c.precision)}</>} sub={<>{num(c.wasted_reviews)} reviews would find nothing wrong</>} />
+        <StatTile label="Best possible" value={<>{pct(c.oracle_reached, 1)}</>} sub={<>You reach {pct(c.revenue_reached / Math.max(c.oracle_reached, 1e-9))} of it</>} />
+        <StatTile label="Versus picking by order value" value={<>{at('Heads Up') >= at('Sales only') ? '+' : ''}{((at('Heads Up') - at('Sales only')) * 100).toFixed(1)} pts</>} sub={<>more late revenue reached</>} color={at('Heads Up') >= at('Sales only') ? 'var(--good)' : 'var(--crit)'} />
       </div>
       <Card title="Late revenue reached as your team reviews more orders" lead="Orders are reviewed from highest priority downward. The higher the line, the better the ordering. Hover to compare.">
         <LineChart series={series} marker={b / 50} xMax={0.5} ticks={[0, .2, .4, .6, .8, 1]} xTitle="Share of orders reviewed" yTitle="Late revenue reached" height={330} />

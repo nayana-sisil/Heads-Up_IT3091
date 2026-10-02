@@ -1,3 +1,4 @@
+import { Note } from '../components/tech'
 import { useEffect, useState } from 'react'
 import { useGet } from '../api'
 import { Meta, OrderRow } from '../types'
@@ -27,7 +28,7 @@ export default function Handle() {
           <div className="tabs" role="tablist">{['Critical', 'High', 'Standard'].map(t => <button key={t} role="tab" aria-selected={tier === t} className={tier === t ? 'on' : ''} onClick={() => setTier(t)}>{t}{s?.tiers[t] ? ` (${num(s.tiers[t].orders)})` : ''}</button>)}</div>
           <select className="select" value={period} onChange={e => setPeriod(e.target.value)} aria-label="Period" style={{ marginLeft: 'auto' }}>{PERIODS.map(x => <option key={x.id} value={x.id}>{x.label}</option>)}</select>
         </div>
-        <p className="note" style={{ margin: '10px 0 0' }}><b style={{ color: 'var(--ink)' }}>{tier}: {WHAT[tier]}.</b> {s?.tiers[tier] ? `${moneyK(s.tiers[tier].at_risk)} at risk.` : ''} Sorted with the biggest, riskiest orders first. Tap an order to see why.</p>
+        <Note><b style={{ color: 'var(--ink)' }}>{tier}: {WHAT[tier]}.</b> {s?.tiers[tier] ? `${moneyK(s.tiers[tier].at_risk)} at risk.` : ''} Sorted with the biggest, riskiest orders first. Tap an order to see why.</Note>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginTop: 12 }}>
           <div style={{ position: 'relative', flex: '1 1 220px' }}>
             <span style={{ position: 'absolute', left: 11, top: 9, color: 'var(--ink3)' }}><Icon name="search" size={18} /></span>

@@ -123,11 +123,11 @@ export function ConfMatrix({ tp, fp, fn, tn }: { tp: number; fp: number; fn: num
 }
 
 /* Dot plot: one dot per item on a shared axis, optional dashed reference line. */
-export function DotPlot({ rows, min, max, refLine, refLabel, fmt = (v: number) => v.toFixed(3), color = 'var(--acc, var(--brand))', width = 640 }: { rows: { label: string; value: number; color?: string; note?: string }[]; min: number; max: number; refLine?: number; refLabel?: string; fmt?: (v: number) => string; color?: string; width?: number }) {
-  const L = 150, R = 56, rh = 28, T = 8, W = width, H = T + rows.length * rh + 22
+export function DotPlot({ rows, min, max, refLine, refLabel, fmt = (v: number) => v.toFixed(3), color = 'var(--acc, var(--brand))', width = 560 }: { rows: { label: string; value: number; color?: string; note?: string }[]; min: number; max: number; refLine?: number; refLabel?: string; fmt?: (v: number) => string; color?: string; width?: number }) {
+  const L = 132, R = 52, rh = 30, T = 8, W = width, H = T + rows.length * rh + 22
   const X = (v: number) => L + ((v - min) / (max - min)) * (W - L - R)
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="chart" role="img" aria-label="Dot plot" style={{ fontSize: 13 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="chart" role="img" aria-label="Dot plot" style={{ fontSize: 13.5 }}>
       {[0, .25, .5, .75, 1].map(k => { const v = min + k * (max - min); return <g key={k}><line className="ax" x1={X(v)} x2={X(v)} y1={T} y2={H - 20} strokeDasharray="3 4" /><text x={X(v)} y={H - 6} textAnchor="middle">{fmt(v)}</text></g> })}
       {refLine !== undefined && <g><line x1={X(refLine)} x2={X(refLine)} y1={T} y2={H - 20} stroke="var(--high)" strokeWidth="1.5" strokeDasharray="5 4" /><text x={X(refLine) + 4} y={T + 9} fill="var(--high)" style={{ fill: 'var(--high)' }}>{refLabel}</text></g>}
       {rows.map((r, i) => { const y = T + i * rh + rh / 2; return <g key={r.label}>
