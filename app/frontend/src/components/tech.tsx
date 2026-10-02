@@ -2,19 +2,51 @@ import { ReactNode } from 'react'
 import { useData } from '../data'
 import { Card } from './ui'
 import { useApp } from '../state'
+import { PAGES, pageOf } from '../nav'
+import { Icon } from './Icons'
+import { StatTile, Timeline } from './viz'
 
-export function PageHead({ stage, nb, line, viva }: { stage: string; nb: string; line: string; viva?: string }) {
+export interface HeroChip { icon?: string; k: ReactNode; l: string }
+/* Page banner: stage badge, one big takeaway, a short explanation and up to three stat chips. */
+export function PageHead({ stage, nb, line, big, chips }: { stage: string; nb: string; line: string; big?: string; chips?: HeroChip[] }) {
+  const { page } = useApp(); const cur = pageOf(page); const num = cur?.label.match(/^(\d+)\./)?.[1]
   return (
-    <Card className="hero">
-      <div className="eyebrow">{stage} · Source: {nb}</div>
-      <h2 style={{ margin: '6px 0 0', fontSize: 'clamp(20px,2.6vw,26px)', letterSpacing: '-.02em', maxWidth: 820, lineHeight: 1.25 }}>{line}</h2>
-      {viva && <p className="note" style={{ margin: '12px 0 0' }}><b style={{ color: 'var(--ink)' }}>Likely viva question:</b> {viva}</p>}
-    </Card>
+    <section className="phero">
+      {num && <div className="wm" aria-hidden>{num}</div>}
+      <div className="badge">{cur && <Icon name={cur.icon} size={15} />}{stage}</div>
+      <h2>{big ?? line}</h2>
+      {big && <p className="sub2">{line}</p>}
+      <div className="srcline">Source: {nb}</div>
+      {chips && chips.length > 0 && <div className="hchips">{chips.map((c, i) => <div key={i} className="hchip">{c.icon && <Icon name={c.icon} size={18} />}<div><div className="hk num">{c.k}</div><div className="hl">{c.l}</div></div></div>)}</div>}
+    </section>
   )
 }
 
-export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
-  return <Card><div className="eyebrow">{label}</div><div className="kpi num">{value}</div>{sub && <div className="muted" style={{ fontSize: 13 }}>{sub}</div>}</Card>
+/* Stage stepper (1 to 10) and previous/next links for the "How it was built" pages. */
+export function Stepper() {
+  const { page, go } = useApp(); const stages = PAGES.filter(p => /^\d+\./.test(p.label)); const i = stages.findIndex(p => p.id === page)
+  if (i < 0) return null
+  return (
+    <div className="stepper" role="navigation" aria-label="Project stages">
+      {stages.map((p, k) => <button key={p.id} className={`st ${k === i ? 'on' : k < i ? 'done' : ''}`} style={{ ['--c' as any]: p.acc }} onClick={() => go(p.id)} title={p.label} aria-current={k === i ? 'step' : undefined}>
+        <span className="sn">{k < i ? <Icon name="check" size={14} /> : k + 1}</span><span className="sname">{p.title.split(' ')[0]}</span></button>)}
+    </div>
+  )
+}
+export function PrevNext() {
+  const { page, go } = useApp(); const stages = PAGES.filter(p => /^\d+\./.test(p.label)); const i = stages.findIndex(p => p.id === page)
+  if (i < 0) return null
+  const prev = stages[i - 1], next = stages[i + 1] ?? pageOf('decisions')
+  return (
+    <div className="prevnext">
+      {prev ? <button onClick={() => go(prev.id)} style={{ ['--c' as any]: prev.acc }}><Icon name="back" size={18} /><span><small>Previous</small>{prev.label}</span></button> : <span />}
+      {next && <button onClick={() => go(next.id)} style={{ ['--c' as any]: next.acc, textAlign: 'right' }}><span><small>Next</small>{next.label}</span><Icon name="arrow" size={18} /></button>}
+    </div>
+  )
+}
+
+export function Stat({ label, value, sub, icon, color }: { label: string; value: ReactNode; sub?: ReactNode; icon?: string; color?: string }) {
+  return <StatTile icon={icon} label={label} value={value} sub={sub} color={color} />
 }
 
 export function Callout({ title, children, tone }: { title?: string; children: ReactNode; tone?: 'crit' | 'good' }) {
@@ -55,24 +87,20 @@ export function Steps({ items }: { items: { title: string; text: ReactNode }[] }
   return <ol className="steps">{items.map((s, i) => <li key={i}><span className="n">{i + 1}</span><div><b>{s.title}</b><div className="muted">{s.text}</div></div></li>)}</ol>
 }
 
-/* Decision log entries that belong to a stage, straight from DECISION_LOG.md. */
+/* Decision log entries that belong to a stage, straight from DECISION_LOG.md. Visible, not folded. */
 export function Related({ stage }: { stage: string }) {
   const d = useData<any>('decisions.json'); const { go } = useApp()
   if (!d) return null
   const entries = d.stages.filter((s: any) => s.stage.startsWith(stage)).flatMap((s: any) => s.entries)
   if (!entries.length) return null
   return (
-    <details className="fold">
-      <summary>Decisions made in this stage ({entries.length})</summary>
-      <div style={{ paddingTop: 8 }}>
-        {entries.map((e: any, i: number) => (
-          <details key={i} className="subfold">
-            <summary><span className="dim num">{e.date}</span> {e.title}</summary>
-            <p><b>Decision.</b> {e.decision}</p><p><b>Reason.</b> {e.reason}</p>{e.alternatives && <p><b>Alternatives.</b> {e.alternatives}</p>}
-          </details>))}
+    <>
+      <div className="sectitle">Decisions made in this stage ({entries.length})</div>
+      <Card>
+        <Timeline items={entries.map((e: any) => ({ icon: 'log', title: e.title, tag: e.date, text: <><span>{e.decision}</span><br /><span className="dim">Why: {e.reason}</span></> }))} />
         <button className="btn" onClick={() => go('decisions')}>Open the full decision log</button>
-      </div>
-    </details>
+      </Card>
+    </>
   )
 }
 

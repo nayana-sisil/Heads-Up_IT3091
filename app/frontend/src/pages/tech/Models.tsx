@@ -3,6 +3,7 @@ import { useReport } from '../../data'
 import { Bars, Card, LineChart, ChartLegend, Skeleton } from '../../components/ui'
 import { Callout, PageHead, Related, Stat, Steps, Tbl, fig, pc } from '../../components/tech'
 import { num } from '../../format'
+import { DotPlot, Timeline, Dots100, Tag } from '../../components/viz'
 
 export function Models() {
   const r = useReport(); if (!r) return <Skeleton h={500} />
@@ -11,7 +12,7 @@ export function Models() {
   const base = b.find((x: any) => x.model.startsWith('Rule'))
   return (
     <div className="grid">
-      <PageHead stage="Stages 5 and 6" nb="notebook 04_model_development" line="Twelve models were compared against a one line rule. The best ones are close to each other, and the rule is a tougher opponent than expected." viva="Why is a Random Forest better than the baseline if the AUC only moves from 0.73 to 0.76?" />
+      <PageHead stage="Stages 5 and 6" nb="notebook 04_model_development" big="Twelve models, and a one line rule is a tough opponent." line="Twelve models were compared against a one line rule. The best ones are close to each other, and the rule is a tougher opponent than expected." chips={[{ icon: 'models', k: '12', l: 'models compared' }, { icon: 'code', k: '0.727', l: 'rule baseline AUC' }, { icon: 'brain', k: '0.765', l: 'best AUC (neural net)' }]} />
       <div className="grid g3">
         <Stat label="Baseline rule" value={`Recall ${base.recall.toFixed(2)}`} sub={`Predict "late" for any shipping option that was late more than half the time in training (First and Second Class). ROC-AUC ${base.roc_auc.toFixed(3)}`} />
         <Stat label="Best ROC-AUC" value={best('roc_auc').toFixed(3)} sub="Neural network, closely followed by LightGBM, CatBoost, Stacking and Gradient Boosting" />
@@ -22,21 +23,21 @@ export function Models() {
         <p className="note" style={{ marginTop: 8 }}>Gradient Boosting, LightGBM, CatBoost, Random Forest, XGBoost, the Neural Network and both ensembles all sit inside a narrow band (ROC-AUC 0.758 to 0.765). That tells us the signal in this data is limited, mostly the shipping option.</p>
       </Card>
       <div className="two">
-        <Card title="Recall by model" lead="Share of really late orders caught at the default 0.5 line.">
-          <Bars rows={[...b].sort((x: any, y: any) => y.recall - x.recall).map((x: any) => ({ label: x.model.replace(' (sklearn)', '').replace(' (PyTorch)', ''), value: x.recall }))} fmt={v => v.toFixed(3)} max={0.7} />
+        <Card title="Recall by model" lead="Share of really late orders caught at the default 0.5 line. The dashed line is the one line rule.">
+          <DotPlot min={0.3} max={0.7} refLine={base.recall} refLabel="rule" rows={[...b].sort((x: any, y: any) => y.recall - x.recall).map((x: any) => ({ label: x.model.replace(' (sklearn)', '').replace(' (PyTorch)', ''), value: x.recall, color: x.model.startsWith('Rule') ? 'var(--high)' : undefined }))} />
         </Card>
         <Card title="ROC-AUC by model" lead="How well the model ranks late orders above on time ones. 0.5 is a coin flip.">
-          <Bars rows={[...b].sort((x: any, y: any) => y.roc_auc - x.roc_auc).map((x: any) => ({ label: x.model.replace(' (sklearn)', '').replace(' (PyTorch)', ''), value: x.roc_auc }))} fmt={v => v.toFixed(3)} max={0.8} />
+          <DotPlot min={0.6} max={0.8} refLine={base.roc_auc} refLabel="rule" fmt={v => v.toFixed(2)} rows={[...b].sort((x: any, y: any) => y.roc_auc - x.roc_auc).map((x: any) => ({ label: x.model.replace(' (sklearn)', '').replace(' (PyTorch)', ''), value: x.roc_auc, color: x.model.startsWith('Rule') ? 'var(--high)' : 'var(--brand)' }))} />
         </Card>
       </div>
       <Card title="What we learned along the way" lead="Bugs and surprises are part of the result. They are all in the decision log.">
-        <Steps items={[
-          { title: 'The first baseline predicted "late" for everyone', text: 'It used Shipping Mode OR Region. Because the late rate is over 50%, nearly every region qualified. The classification report exposed it. Using Shipping Mode alone gave a real baseline: Recall 0.53, Precision 0.84.' },
-          { title: 'SVM looked different until it converged', text: 'After raising max_iter and setting dual=False, the linear SVM matched Logistic Regression almost exactly. The first gap was only an unfinished optimization.' },
-          { title: 'Built in feature importance was misleading', text: 'Random Forest and LightGBM ranked order_hour high and Shipping Mode low, which contradicted EDA. Both measures favour features with many values. Permutation importance and later SHAP gave the real picture.' },
-          { title: 'Newer boosting is not more accurate here', text: 'Only AdaBoost lagged. Classic Gradient Boosting matched XGBoost, LightGBM and CatBoost on every metric, so the newer libraries are faster, not better, on this dataset.' },
-          { title: 'Voting and Stacking did not help', text: 'Both ensembles scored lower on Recall than Random Forest alone. The four models they combined all make similar mistakes.' },
-          { title: 'Candidates for tuning', text: 'Random Forest (best Recall), the Neural Network (best ROC-AUC and Precision), with XGBoost as a backup. XGBoost later became the model inside this app.' },
+        <Timeline items={[
+          { icon: 'alert', title: 'The first baseline predicted "late" for everyone', text: 'It used Shipping Mode OR Region. Because the late rate is over 50%, nearly every region qualified. The classification report exposed it. Using Shipping Mode alone gave a real baseline: Recall 0.53, Precision 0.84.' },
+          { icon: 'tool', title: 'SVM looked different until it converged', text: 'After raising max_iter and setting dual=False, the linear SVM matched Logistic Regression almost exactly. The first gap was only an unfinished optimization.' },
+          { icon: 'eye', title: 'Built in feature importance was misleading', text: 'Random Forest and LightGBM ranked order_hour high and Shipping Mode low, which contradicted EDA. Both measures favour features with many values. Permutation importance and later SHAP gave the real picture.' },
+          { icon: 'models', title: 'Newer boosting is not more accurate here', text: 'Only AdaBoost lagged. Classic Gradient Boosting matched XGBoost, LightGBM and CatBoost on every metric, so the newer libraries are faster, not better, on this dataset.' },
+          { icon: 'layers', title: 'Voting and Stacking did not help', text: 'Both ensembles scored lower on Recall than Random Forest alone. The four models they combined all make similar mistakes.' },
+          { icon: 'target', title: 'Candidates for tuning', text: 'Random Forest (best Recall), the Neural Network (best ROC-AUC and Precision), with XGBoost as a backup. XGBoost later became the model inside this app.' },
         ]} />
       </Card>
       <Related stage="Stage 5" />
@@ -56,16 +57,19 @@ export function Tuning() {
     { name: 'Precision (flags that were right)', color: '#c8691a', values: sweep.map((x: any) => x.precision) },
     { name: 'Share of orders flagged', color: '#8a63d2', values: sweep.map((x: any) => x.flagged), dash: '5 4' },
   ]
+  const lateShare = (r.splits.find((x: any) => x.name.toLowerCase().startsWith(sp === 'val' ? 'val' : 'test')) ?? r.splits[1]).late_rate
+  const caught = Math.round(100 * lateShare * row.recall), missed = Math.round(100 * lateShare) - caught
+  const falseA = Math.max(0, Math.round(100 * row.flagged) - caught), correct = Math.max(0, 100 - caught - missed - falseA)
   const costMin = sweep.reduce((a: any, x: any) => x.cost < a.cost ? x : a, sweep[0])
   const flagAll = sweep[0]
   const mseries = [{ name: 'Random Forest', color: '#2a6fdb', values: r.models['Random Forest'].val.matched.map((x: any) => x.precision) }, { name: 'XGBoost', color: '#c8691a', values: r.models.XGBoost.val.matched.map((x: any) => x.precision) }, { name: 'Neural Network', color: '#1b9e8a', values: r.nn_matched.map((x: any) => x.precision) }]
   return (
     <div className="grid">
-      <PageHead stage="Stages 7 and 8" nb="notebook 05_hyperparameter_tuning_and_evaluation" line="Tuning helped less than expected, all three tuned models tie at the operating point, and the threshold came from a Recall target because a cost based threshold flagged almost every order." viva="Why not just use the threshold that minimizes cost?" />
+      <PageHead stage="Stages 7 and 8" nb="notebook 05_hyperparameter_tuning_and_evaluation" big="Tuning helped little. The flag line comes from a Recall target of 0.80." line="Tuning helped less than expected, all three tuned models tie at the operating point, and the threshold came from a Recall target because a cost based threshold flagged almost every order." chips={[{ icon: 'target', k: '0.80', l: 'Recall target' }, { icon: 'dial', k: '0.38', l: 'Random Forest threshold' }, { icon: 'dial', k: '0.39', l: 'XGBoost threshold' }]} />
       <div className="three-cols grid g3">
         {(['Random Forest', 'XGBoost'] as const).map(k => <Card key={k} title={`${k} settings`} lead="Best of the Optuna search, picked on validation.">
-          <Tbl head={['Setting', 'Value']} num={[1]} rows={Object.entries(r.models[k].params).map(([a, v]) => [a, typeof v === 'number' ? (Number.isInteger(v) ? String(v) : (v as number).toPrecision(3)) : String(v)])} /></Card>)}
-        <Card title="Neural network settings" lead="Two hidden layers, tuned the same way."><Tbl head={['Setting', 'Value']} num={[1]} rows={Object.entries(r.nn_params).map(([a, v]) => [a, typeof v === 'number' ? (Number.isInteger(v) ? String(v) : (v as number).toPrecision(3)) : String(v)])} /></Card>
+          <div className="chips">{Object.entries(r.models[k].params).map(([a, v]) => <span key={a} className="kvchip"><i>{a}</i><b className="num">{typeof v === 'number' ? (Number.isInteger(v) ? String(v) : (v as number).toPrecision(3)) : String(v)}</b></span>)}</div></Card>)}
+        <Card title="Neural network settings" lead="Two hidden layers, tuned the same way."><div className="chips">{Object.entries(r.nn_params).map(([a, v]) => <span key={a} className="kvchip"><i>{a}</i><b className="num">{typeof v === 'number' ? (Number.isInteger(v) ? String(v) : (v as number).toPrecision(3)) : String(v)}</b></span>)}</div></Card>
       </div>
       <div className="two">
         <Card title="Random Forest search" lead="Each dot is one Optuna trial.">{fig('rf_optimization_history.png', 'Random Forest Optuna history')}</Card>
@@ -88,6 +92,13 @@ export function Tuning() {
           <div className="tile"><div className="eyebrow">Recall</div><div className="k num">{pc(row.recall)}</div></div>
           <div className="tile"><div className="eyebrow">Precision</div><div className="k num">{pc(row.precision)}</div></div>
           <div className="tile"><div className="eyebrow">Orders flagged</div><div className="k num">{pc(row.flagged, 0)}</div></div>
+        </div>
+        <div className="two" style={{ alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>What happens to 100 orders ({sp === 'val' ? 'validation' : 'test'})</div>
+            <Dots100 size={20} cats={[{ n: caught, color: 'var(--good)', label: 'late and caught' }, { n: missed, color: 'var(--crit)', label: 'late and missed' }, { n: falseA, color: 'var(--high)', label: 'false alarm' }, { n: correct, color: 'var(--std)', label: 'on time, not flagged' }]} />
+          </div>
+          <p className="muted" style={{ margin: 0 }}>Slide the threshold down and the red dots turn green, but the orange false alarms grow. We picked the highest line that still catches 80% of late orders.</p>
         </div>
         <LineChart series={series} height={280} marker={frac} xTitle="Threshold" yTitle="Share" xFmt={x => (0.05 + 0.9 * x).toFixed(2)} tipTitle={s => `Threshold ${s}`} />
         <ChartLegend series={series} />

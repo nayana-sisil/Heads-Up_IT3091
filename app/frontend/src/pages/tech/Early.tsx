@@ -2,39 +2,56 @@ import { useReport } from '../../data'
 import { Bars, Card, Skeleton } from '../../components/ui'
 import { Callout, Columns, PageHead, Related, Stat, Steps, Tbl, pc } from '../../components/tech'
 import { moneyK, num } from '../../format'
+import { Flow, Dots100, Heat } from '../../components/viz'
 
 export function Problem() {
   const r = useReport(); if (!r) return <Skeleton h={500} />
   const e = r.eda, st = r.raw.status_to_target
+  const lateN = Math.round(e.late_rate * 100)
   return (
     <div className="grid">
-      <PageHead stage="Stages 1 and 2" nb="README, DECISION_LOG, notebook 01" line="We predict, at the moment an order is placed, whether it will arrive late. Then we rank the risky orders by how much money is at stake." viva="Why is Recall your main metric when the classes are almost balanced?" />
-      <div className="two">
-        <Card title="Two lenses, one model" lead="Both lenses use the same predictions.">
-          <div className="flow">
-            <div className="node"><b>Primary lens</b>Late delivery risk. Binary classification: will this order be late (1) or not (0)?</div>
-            <div className="arrow">then</div>
-            <div className="node"><b>Secondary lens</b>Shipment prioritization. Chance of late × order value gives a ranked action queue.</div>
-          </div>
-          <p className="note" style={{ marginTop: 12 }}>Inputs are limited to facts known when the order is placed. Nothing from after shipping is allowed in.</p>
-        </Card>
-        <Card title="What counts as late" lead="The target is Late_delivery_risk. This is how the dataset's Delivery Status maps to it, counted over all 180,519 order lines.">
-          <Tbl head={['Delivery Status', 'Target 0', 'Target 1']} num={[1, 2]} rows={st.map((s: any) => [s.status, num(s.on_time), num(s.late)])} />
-          <p className="note" style={{ marginTop: 10 }}>Every status maps to exactly one target value. "Shipping canceled" ({pc(r.raw.canceled_share)} of lines) is coded 0 in the data, and we kept it as given after checking.</p>
-        </Card>
-      </div>
-      <div className="grid g3">
-        <Stat label="Late share" value={pc(e.late_rate)} sub={`${num(e.late)} late and ${num(e.on_time)} on time orders`} />
-        <Stat label="Primary metric" value="Recall" sub="share of really late orders that we catch" />
-        <Stat label="Cost used for the threshold" value={`${r.threshold_notes.cost_fn} : ${r.threshold_notes.cost_fp}`} sub="a missed late order costs 3 times a false alarm" />
-      </div>
-      <Card title="Why Recall" lead="The reason changed after we looked at the data, and we logged both versions.">
-        <Steps items={[
-          { title: 'First reason (12 Sep)', text: 'We assumed the classes were imbalanced, so accuracy would mislead.' },
-          { title: 'What EDA showed (15 Sep)', text: `The split is ${pc(e.late_rate, 2)} late and ${pc(1 - e.late_rate, 2)} on time, which is close to balanced. So imbalance is not the reason.` },
-          { title: 'The real reason', text: 'Cost. Missing a late order brings penalties and unhappy customers. A false alarm only costs a quick check. So catching late orders matters more than raw accuracy. Precision, F1, ROC-AUC and PR-AUC are supporting metrics.' },
+      <PageHead stage="Stages 1 and 2" nb="README, DECISION_LOG, notebook 01" big="Warn about a late order the moment it is placed, then rank by money at stake."
+        line="That is the whole project in one sentence. One model gives the chance of late, and a second step turns it into a short list to act on."
+        chips={[{ icon: 'box', k: num(r.raw.orders), l: 'orders' }, { icon: 'clock', k: pc(e.late_rate, 0), l: 'arrive late' }, { icon: 'layers', k: '28', l: 'inputs per order' }]} />
+      <Card title="Two lenses, one model" lead="Both lenses use the same predictions. Inputs are limited to facts known when the order is placed.">
+        <Flow nodes={[
+          { icon: 'box', title: 'New order', text: 'Only facts known at order time go in.', color: 'var(--acc)' },
+          { icon: 'brain', title: 'Primary lens', text: 'Late delivery risk. Will this order be late (1) or not (0)?', color: 'var(--brand)' },
+          { icon: 'rank', title: 'Secondary lens', text: 'Shipment prioritization. Chance of late × order value.', color: 'var(--high)' },
+          { icon: 'flag', title: 'Ranked queue', text: 'The team acts on the top of the list.', color: 'var(--crit)' },
         ]} />
       </Card>
+      <div className="two">
+        <Card title="What counts as late" lead={`The target is Late_delivery_risk. Delivery Status maps to it like this, over all ${num(r.raw.rows)} order lines.`}>
+          {st.map((x: any) => { const t = x.on_time + x.late; return (
+            <div key={x.status} className="barrow" style={{ gridTemplateColumns: '130px 1fr 70px' }}>
+              <div className="lbl">{x.status}</div>
+              <div className="stack" style={{ margin: 0, height: 12 }}><div style={{ width: `${(x.on_time / t) * 100}%`, background: 'var(--good)', display: x.on_time ? undefined : 'none' }} title={`${num(x.on_time)} on time (target 0)`} /><div style={{ width: `${(x.late / t) * 100}%`, background: 'var(--crit)', display: x.late ? undefined : 'none' }} title={`${num(x.late)} late (target 1)`} /></div>
+              <div className="val num">{num(t)}</div>
+            </div>) })}
+          <div className="legend" style={{ marginTop: 10 }}><span><i className="sw" style={{ background: 'var(--good)' }} />Target 0, not late</span><span><i className="sw" style={{ background: 'var(--crit)' }} />Target 1, late</span></div>
+          <p className="note" style={{ marginTop: 10 }}>Every status maps to exactly one target value. "Shipping canceled" ({pc(r.raw.canceled_share)} of lines) is coded 0 in the data, and we kept it as given after checking.</p>
+        </Card>
+        <Card title="Out of 100 orders" lead="The split is close to balanced, so accuracy alone would not mislead us.">
+          <Dots100 cats={[{ n: lateN, color: 'var(--crit)', label: 'arrive late' }, { n: 100 - lateN, color: 'var(--good)', label: 'arrive on time' }]} />
+        </Card>
+      </div>
+      <div className="two">
+        <Card title="Why Recall" lead="Catching late orders matters more than raw accuracy. The reason changed after we looked at the data, and we logged both versions.">
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', margin: '4px 0 12px' }}>
+            {[1, 2, 3].map(i => <div key={i} style={{ flex: 1, height: 54, borderRadius: 10, background: 'var(--crit)', display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800 }}>{i === 2 ? 'missed late order = 3' : ''}</div>)}
+            <div style={{ flex: 1, height: 18, borderRadius: 8, background: 'var(--high)' }} title="a false alarm costs 1" />
+          </div>
+          <p className="note" style={{ margin: 0 }}>A missed late order costs {r.threshold_notes.cost_fn}. A false alarm costs {r.threshold_notes.cost_fp}, a quick check.</p>
+        </Card>
+        <Card title="How the reason changed">
+          <Steps items={[
+            { title: 'First reason (12 Sep)', text: 'We assumed the classes were imbalanced, so accuracy would mislead.' },
+            { title: 'What EDA showed (15 Sep)', text: `The split is ${pc(e.late_rate, 2)} late and ${pc(1 - e.late_rate, 2)} on time, close to balanced. So imbalance is not the reason.` },
+            { title: 'The real reason', text: 'Cost. Precision, F1, ROC-AUC and PR-AUC are supporting metrics.' },
+          ]} />
+        </Card>
+      </div>
       <Related stage="Stage 2" />
     </div>
   )
@@ -47,7 +64,7 @@ export function DataEda() {
   const hourItems = e.by_hour.map((h: any) => ({ label: h.name, value: h.late_rate, tip: `${h.name}:00, ${pc(h.late_rate)} late` }))
   return (
     <div className="grid">
-      <PageHead stage="Stage 2" nb="notebook 01_eda" line="Shipping option is by far the strongest signal. Calendar effects are flat. Several fields had to be kept out because they are only known after delivery." viva="How did you check for data leakage?" />
+      <PageHead stage="Stage 2" nb="notebook 01_eda" big="Shipping option is the strongest signal. Calendar effects are flat." line="Shipping option is by far the strongest signal. Calendar effects are flat. Several fields had to be kept out because they are only known after delivery." chips={[{ icon: 'data', k: '53', l: 'columns' }, { icon: 'box', k: '65,752', l: 'orders' }, { icon: 'truck', k: '57 pts', l: 'best to worst shipping gap' }]} />
       <div className="grid g4">
         <Stat label="Order lines" value={num(raw.rows)} sub={`${raw.columns} columns`} />
         <Stat label="Unique orders" value={num(raw.orders)} sub={`${raw.lines_per_order.toFixed(2)} lines per order`} />
@@ -63,6 +80,10 @@ export function DataEda() {
           <Columns items={monthItems} max={1} height={230} showEvery={3} rotate />
         </Card>
       </div>
+      <Card title="Hour of day × shipping option" lead="Each square is the late rate for orders placed in that hour. The Same Day row jumps from never late to almost always late at noon.">
+        <Heat rows={e.heat.modes} cols={e.heat.hours.map((h: number) => String(h))} vals={e.heat.vals} colLabelEvery={2} />
+        <div className="legend"><span><i className="sw" style={{ background: 'var(--crit)', opacity: .12 }} />0% late</span><span><i className="sw" style={{ background: 'var(--crit)' }} />100% late</span><span className="dim">Hover a square for the exact value.</span></div>
+      </Card>
       <div className="two">
         <Card title="Late rate by hour of the day" lead="All shipping options together. The hour matters mainly through Same Day orders (see Explainability).">
           <Columns items={hourItems} max={0.8} height={200} showEvery={3} />
@@ -103,7 +124,14 @@ export function Prep() {
   const ben = e.benefit_hist.map((b: any) => ({ label: String(Math.round(b.lo)), value: b.n, color: b.hi <= e.benefit_p1 || b.lo >= e.benefit_p99 ? 'var(--crit)' : 'var(--brand)', tip: `$${Math.round(b.lo)} to $${Math.round(b.hi)}: ${num(b.n)} orders` }))
   return (
     <div className="grid">
-      <PageHead stage="Stage 3" nb="notebook 02_preprocessing" line="We turned 180,519 order lines into 65,752 orders, dropped one useless field, capped extreme profits, and split the data by time so the test set is the future." viva="Why did you split by time instead of randomly?" />
+      <PageHead stage="Stage 3" nb="notebook 02_preprocessing" big="180,519 lines became 65,752 orders, split by time so the test set is the future." line="We turned 180,519 order lines into 65,752 orders, dropped one useless field, capped extreme profits, and split the data by time so the test set is the future." chips={[{ icon: 'layers', k: '46,026', l: 'train orders' }, { icon: 'dial', k: '7,890', l: 'validation orders' }, { icon: 'flag', k: '11,836', l: 'test orders' }]} />
+      <Card title="From lines to orders to three sets" lead="Each step keeps only what the model can learn from.">
+        <Flow nodes={[
+          { icon: 'data', title: `${num(r.raw.rows)} lines`, text: 'The raw file. One row per item in a basket.', color: 'var(--std)' },
+          { icon: 'box', title: `${num(r.raw.orders)} orders`, text: 'Collapsed to one row per order.', color: 'var(--acc)' },
+          { icon: 'calendar', title: 'Split by date', text: 'Oldest 70% train, next 12% validation, newest 18% test.', color: 'var(--brand)' },
+        ]} />
+      </Card>
       <div className="two">
         <Card title="From order lines to orders" lead="One order can have several lines. The model predicts per order, so lines were collapsed.">
           <Tbl head={['Column', 'Rule']} rows={[['Sales, Order Item Quantity', 'Sum across lines'], ['Shipping Mode, region, country, segment, payment type', 'First value (same on every line)'], ['Late_delivery_risk', 'First value (checked: identical on all lines of an order)'], ['Category Name, Category Id', 'Most common value (mode), because 67.8% of orders mix categories'], ['New: n_line_items, n_distinct_categories', 'Counted, so the mix is not lost']]} />

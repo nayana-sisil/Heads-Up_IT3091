@@ -5,6 +5,7 @@ import { Bars, Card, Skeleton, TierChip } from '../../components/ui'
 import { Callout, PageHead, Related, Stat, Steps, Tbl, pc } from '../../components/tech'
 import { money, num } from '../../format'
 import { useApp } from '../../state'
+import { DotPlot, Flow, Dots100 } from '../../components/viz'
 
 export function Priority() {
   const r = useReport(); const { go } = useApp(); const { data: t } = useGet<any>('/api/trust'); const [m, setM] = useState('XGBoost')
@@ -13,7 +14,7 @@ export function Priority() {
   const order: [string, string][] = [['Random order', 'Random'], ['Sales only', 'Sales only'], ['Risk only', 'Risk only'], ['Simple rule', 'Simple rule × Sales'], ['Heads Up', 'Heads Up (risk × Sales)'], ['Oracle', 'Perfect (ceiling)']]
   return (
     <div className="grid">
-      <PageHead stage="Stage 9" nb="notebook 06_shipment_prioritization" line="Chance of late × order value puts the right orders at the top. It beats ranking by risk alone or by money alone, but a simple shipping rule ties it." viva="Is the model actually better than a simple rule for prioritization?" />
+      <PageHead stage="Stage 9" nb="notebook 06_shipment_prioritization" big="Chance of late × order value puts the right orders at the top." line="Chance of late × order value puts the right orders at the top. It beats ranking by risk alone or by money alone, but a simple shipping rule ties it." chips={[{ icon: 'money', k: '36%', l: 'of late revenue in top 10%' }, { icon: 'users', k: '11%', l: 'with random picking' }, { icon: 'rank', k: '48%', l: 'best possible (oracle)' }]} />
       <div className="two">
         <Card title="The priority score" lead="One line, easy to explain.">
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-.02em', margin: '4px 0 12px' }}>priority = chance of late<sup>α</sup> × order value</div>
@@ -32,11 +33,20 @@ export function Priority() {
       </div>
       <div className="two">
         {(['validation', 'test'] as const).map(k => <Card key={k} title={`Top 10% queue, ${k} set (${m})`} lead="Share of late revenue reached. Higher is better.">
-          <Bars rows={order.map(([key, lab]) => ({ label: lab, value: P[k][key].revenue }))} fmt={v => pc(v)} max={0.55} />
+          <DotPlot min={0} max={0.55} fmt={v => pc(v, 0)} refLine={P[k]['Oracle'].revenue} refLabel="best possible" rows={order.filter(([key]) => key !== 'Oracle').map(([key, lab]) => ({ label: lab, value: P[k][key].revenue, color: key === 'Heads Up' ? 'var(--good)' : key === 'Random order' ? 'var(--std)' : undefined }))} />
+          <div style={{ marginTop: 10 }}><div className="eyebrow" style={{ marginBottom: 6 }}>Top 100 orders, Heads Up</div><Dots100 size={18} cols={20} cats={[{ n: Math.round(P[k]['Heads Up'].precision * 100), color: 'var(--crit)', label: 'really late' }, { n: 100 - Math.round(P[k]['Heads Up'].precision * 100), color: 'var(--std)', label: 'on time' }]} /></div>
           <p className="note" style={{ marginTop: 8 }}>Precision at the top: Heads Up {pc(P[k]['Heads Up'].precision, 0)}, risk only {pc(P[k]['Risk only'].precision, 0)}, sales only {pc(P[k]['Sales only'].precision, 0)}.</p>
         </Card>)}
       </div>
       <Callout title="How to read this honestly">Risk only gets nearly every pick right, but they are small orders, so it reaches little money. Sales only picks big orders, but almost half are not late. Heads Up combines both. The simple rule (shipping option and the Same Day noon line, times Sales) is a tie. We keep the model because it gives a separate chance and a reason for every order, which a rule cannot.</Callout>
+      <Card title="From score to action" lead="Orders below the risk threshold are always Standard, however big they are.">
+        <Flow nodes={[
+          { icon: 'brain', title: 'Chance of late', text: 'From the model.', color: 'var(--brand)' },
+          { icon: 'money', title: '× order value', text: 'Sales, not profit.', color: 'var(--high)' },
+          { icon: 'rank', title: 'Priority score', text: `Top 10% (${money(cut.critical_min)}+) is Critical, next 20% (${money(cut.high_min)}+) is High.`, color: 'var(--crit)' },
+          { icon: 'flag', title: 'Action tier', text: 'Critical today, High this week, Standard normal.', color: 'var(--good)' },
+        ]} />
+      </Card>
       <Card title="Action tiers" lead={`Cut points were set on validation orders: Critical is the top 10% by priority score (${money(cut.critical_min)} or more), High is the next 20% (${money(cut.high_min)} or more). Orders below the risk threshold (${t.config.risk_threshold}) cannot be High.`}>
         <Tbl head={['Tier', 'Set', 'Orders', 'Share', 'Late rate', 'Avg order', 'Late revenue held']} num={[2, 3, 4, 5, 6]} rows={(['validation', 'test'] as const).flatMap(k => ['Critical', 'High', 'Standard'].map(tn => { const x = t.tiers[k][tn]; return [<TierChip tier={tn} />, k, num(x.orders), pc(x.share_orders, 1), pc(x.late_rate, 0), money(x.avg_sales), pc(x.share_late_revenue, 0)] }))} />
         <p className="note" style={{ marginTop: 8 }}>On the test set the Critical share drops from 10% to about 5% because the average order value fell from about $612 to $401. The ranking still works, but the cut points should be refreshed on recent data.</p>
@@ -51,21 +61,22 @@ export function System() {
   const { go } = useApp()
   return (
     <div className="grid">
-      <PageHead stage="Stage 10" nb="app/ in the repo" line="Everything in this site runs from the same files as the notebooks. The model runs inside your browser, so there is no server to break during a demo." viva="How do you know the app gives the same answer as the notebook?" />
+      <PageHead stage="Stage 10" nb="app/ in the repo" big="The model runs inside your browser, so nothing can break during a demo." line="Everything in this site runs from the same files as the notebooks. The model runs inside your browser, so there is no server to break during a demo." chips={[{ icon: 'server', k: '0.88 MB', l: 'live model file' }, { icon: 'check', k: '16', l: 'automated API tests' }, { icon: 'code', k: '28', l: 'features rebuilt in JS' }]} />
       <Card title="How the pieces fit" lead="From raw data to what you see on screen.">
-        <div className="flow">
-          <div className="node"><b>Raw data</b>DataCo CSV, 180,519 lines</div><div className="arrow">→</div>
-          <div className="node"><b>Notebooks 01 to 06</b>EDA, cleaning, features, models, tuning, prioritization</div><div className="arrow">→</div>
-          <div className="node"><b>Export scripts</b>export_app_data, export_lookups, export_report_data</div><div className="arrow">→</div>
-          <div className="node"><b>Model and data files</b>XGBoost trees, scaler, lookups, report numbers</div><div className="arrow">→</div>
-          <div className="node"><b>This site</b>React page with an in-browser XGBoost and SHAP engine</div>
-        </div>
+        <Flow nodes={[
+          { icon: 'data', title: 'Raw data', text: 'DataCo CSV, 180,519 lines', color: 'var(--std)' },
+          { icon: 'log', title: 'Notebooks 01 to 06', text: 'EDA, cleaning, features, models, tuning, prioritization', color: 'var(--brand)' },
+          { icon: 'code', title: 'Export scripts', text: 'export_app_data, export_lookups, export_report_data', color: 'var(--high)' },
+          { icon: 'box', title: 'Model and data files', text: 'XGBoost trees, scaler, lookups, report numbers', color: 'var(--acc)' },
+          { icon: 'eye', title: 'This site', text: 'React page with an in-browser XGBoost and SHAP engine', color: 'var(--good)' },
+        ]} />
+        
         <p className="note" style={{ marginTop: 10 }}>A FastAPI version of the same engine also exists for running on a server or in Docker.</p>
       </Card>
       <div className="grid g3">
-        <Stat label="Browser vs Python model" value="0.00004" sub="largest difference in predicted chance on stored orders. SHAP values identical." />
-        <Stat label="Features from raw fields" value="11,836 of 11,836" sub="test orders rebuilt from raw fields give the same tier. Largest difference 0.00005." />
-        <Stat label="Backend tests" value="16 pass" sub="API, what-if, new order scoring, unknown country fallback, bad input" />
+        <Stat icon="check" color="var(--good)" label="Browser vs Python model" value="0.00004" sub="largest difference in predicted chance on stored orders. SHAP values identical." />
+        <Stat icon="layers" color="var(--brand)" label="Features from raw fields" value="11,836 of 11,836" sub="test orders rebuilt from raw fields give the same tier. Largest difference 0.00005." />
+        <Stat icon="server" color="var(--high)" label="Backend tests" value="16 pass" sub="API, what-if, new order scoring, unknown country fallback, bad input" />
       </div>
       <div className="two">
         <Card title="What it is made of">

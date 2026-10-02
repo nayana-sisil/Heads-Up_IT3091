@@ -40,7 +40,7 @@ export function Features() {
   const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(3)
   return (
     <div className="grid">
-      <PageHead stage="Stage 4" nb="notebook 03_feature_engineering" line="The model sees 28 numbers per order. A few simple rules create them, and every lookup table is learned from the training set only." viva="How do you stop the country late rate from leaking the answer?" />
+      <PageHead stage="Stage 4" nb="notebook 03_feature_engineering" big="28 simple numbers per order, learned from the training set only." line="The model sees 28 numbers per order. A few simple rules create them, and every lookup table is learned from the training set only." chips={[{ icon: 'layers', k: '28', l: 'inputs' }, { icon: 'clean', k: '10', l: 'standardized' }, { icon: 'trust', k: '0', l: 'peeks at the future' }]} />
       <div className="two">
         <Card title="The 28 inputs" lead="Grouped by what they describe.">
           {GROUPS.map(g => <div key={g.group} style={{ marginBottom: 10 }}><div className="eyebrow" style={{ marginBottom: 4 }}>{g.group} ({g.items.length})</div>

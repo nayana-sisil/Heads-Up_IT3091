@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { checkNew, getLookups, get } from '../api'
 import { useApp } from '../state'
 import { CheckInput, CheckResult, LookupInfo, OrderDetail } from '../types'
+import { Waterfall } from '../components/viz'
 import { Card, DriverBars, Gauge, TierChip } from '../components/ui'
 import { verdict } from '../components/verdict'
 import { countryEn, countryEs } from '../static/names'
@@ -104,6 +105,11 @@ export default function Check() {
             </div>
           </Card>
           {res.notes.length > 0 && <div className="callout"><b>Heads up</b>{res.notes.join(' ')}</div>}
+          <Card title="What pushed the risk" lead="Starting from a typical order, each reason moves the chance up (red) or down (green), in percentage points.">
+            {(() => { const sg = (z: number) => 1 / (1 + Math.exp(-z)); const top = [...res.drivers].sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap)).slice(0, 5); const rest = res.drivers.filter(d => !top.includes(d)).reduce((a, d) => a + d.shap, 0)
+              let z = res.base_value; const steps = [...top, ...(Math.abs(rest) > 1e-6 ? [{ label: 'All other reasons', shap: rest }] : [])].map(d => { const a = sg(z); z += d.shap; return { label: d.label, delta: sg(z) - a } })
+              return <Waterfall base={sg(res.base_value)} steps={steps} endLabel="This order" /> })()}
+          </Card>
           <details className="fold">
             <summary>Show the numbers</summary>
             <div style={{ padding: '4px 2px 2px' }}>

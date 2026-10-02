@@ -55,6 +55,7 @@ eda = {
     'by_segment': rate('Customer Segment'), 'by_type': rate('Type'),
     'by_month': [{'name': k, **{a: b for a, b in v.items() if a != 'name'}} for k, v in ((r['name'], r) for r in sorted(rate('month'), key=lambda r: r['name']))],
     'by_hour': sorted(rate('hour'), key=lambda r: int(r['name'])), 'by_dow': sorted(rate('dow'), key=lambda r: int(r['name'])),
+    'heat': {'modes': ['Standard Class', 'Second Class', 'First Class', 'Same Day'], 'hours': list(range(24)), 'vals': [[(r4(g['Late_delivery_risk'].mean()) if len(g) >= 20 else None) for g in (al[(al['Shipping Mode'] == m) & (al['hour'] == hh)] for hh in range(24))] for m in ['Standard Class', 'Second Class', 'First Class', 'Same Day']]},
     'sales_hist': [], 'benefit_hist': [],
 }
 h, e = np.histogram(al['Sales'], bins=20); eda['sales_hist'] = [{'lo': r4(e[i]), 'hi': r4(e[i + 1]), 'n': int(h[i])} for i in range(len(h))]

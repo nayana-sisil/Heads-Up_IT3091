@@ -1,6 +1,7 @@
 import { useApp, DIAL } from './state'
 import { PAGES, pageOf } from './nav'
 import { Icon, Logo } from './components/Icons'
+import { Stepper, PrevNext } from './components/tech'
 import { Drawer } from './components/Drawer'
 import Home from './pages/Home'
 import Check from './pages/Check'
@@ -15,14 +16,14 @@ import { Features } from './pages/tech/Features'
 import { Models, Tuning } from './pages/tech/Models'
 import { Explain, Final } from './pages/tech/Eval'
 import { Priority, System } from './pages/tech/Late'
-import { Decisions, Viva, About } from './pages/tech/Reference'
+import { Decisions, About } from './pages/tech/Reference'
 
 const VIEW: Record<string, () => JSX.Element> = {
   home: Home, check: Check, file: ScoreFile, handle: Handle, capacity: Capacity, replay: Replay, business: Business, trust: Trust,
   problem: Problem, data: DataEda, prep: Prep, features: Features, models: Models, tuning: Tuning, explain: Explain, final: Final, priority: Priority, system: System,
-  decisions: Decisions, viva: Viva, about: About,
+  decisions: Decisions, about: About,
 }
-const TAB: Record<string, string[]> = { use: ['home', 'check', 'file', 'handle'], built: ['problem', 'models', 'final', 'viva'] }
+const TAB: Record<string, string[]> = { use: ['home', 'check', 'file', 'handle'], built: ['problem', 'models', 'final', 'decisions'] }
 
 export default function App() {
   const { page, go, alpha, setAlpha, theme, toggleTheme } = useApp()
@@ -47,9 +48,9 @@ export default function App() {
         <div className="sp" />
         <div className="sidefoot">Live model: tuned XGBoost. Report model: tuned Random Forest.<br />Demo data: the 11,836 test orders (Aug 2017 to Jan 2018) from the DataCo Smart Supply Chain dataset.<br /><br />IT3091 Machine Learning, Group 5</div>
       </nav>
-      <main className="main">
+      <main className="main" style={{ ['--acc' as any]: cur.acc ?? 'var(--brand)' }}>
         <header className="top">
-          <div className="grow"><h1>{cur.title}</h1><div className="sub">{cur.sub}</div></div>
+          <div className="grow">{mode === 'built' ? <div className="crumb">How it was built · {cur.title}</div> : <><h1>{cur.title}</h1><div className="sub">{cur.sub}</div></>}</div>
           {showCtl && <div className="seg" role="group" aria-label="Risk weight" title="How much risk counts compared with order value">
             {DIAL.map((d, i) => <button key={d.id} className={dial === i ? 'on' : ''} onClick={() => setAlpha(d.alpha)} title={d.hint}>{d.label}</button>)}
           </div>}
@@ -58,7 +59,9 @@ export default function App() {
             {PAGES.map(p => <option key={p.id} value={p.id}>{p.mode === 'use' ? 'App: ' : 'Project: '}{p.label}</option>)}
           </select>
         </header>
+        {mode === 'built' && <Stepper />}
         <View />
+        {mode === 'built' && <PrevNext />}
       </main>
       <div className="tabbar">
         {TAB[mode].map(id => { const p = pageOf(id)!; return <button key={id} className={page === id ? 'on' : ''} onClick={() => go(id)}><Icon name={p.icon} size={22} />{p.mode === 'built' ? p.label.replace(/^\d+\. /, '').split(' ')[0] : p.short}</button> })}
