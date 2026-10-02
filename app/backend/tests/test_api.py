@@ -117,3 +117,24 @@ def test_score_many_and_lookups():
     assert len(r) == 2 and r[1]['p'] > r[0]['p']
     L = c.get('/api/lookups').json()
     assert 'Estados Unidos' in L['countries'] and len(L['categories']) == 24
+
+
+def test_report_numbers_match_project_files():
+    """The numbers on the 'How it was built' pages must equal the saved project results."""
+    import json
+    root = Path(__file__).resolve().parents[3]
+    rep = json.load(open(root / 'app' / 'frontend' / 'public' / 'data' / 'report.json'))
+    final = json.load(open(root / 'data' / 'processed' / 'final_test_results.json'))
+    thr = json.load(open(root / 'data' / 'processed' / 'chosen_threshold.json'))
+    rf = rep['models']['Random Forest']
+    assert rf['threshold'] == thr['threshold']
+    assert abs(rf['test']['at_threshold']['recall'] - final['test_recall']) < 5e-4
+    assert abs(rf['test']['at_threshold']['precision'] - final['test_precision']) < 5e-4
+    assert abs(rf['test']['roc_auc'] - final['test_roc_auc']) < 5e-4
+    assert abs(rf['val']['at_threshold']['recall'] - thr['validation_recall_at_threshold']) < 5e-4
+    xg = rep['models']['XGBoost']
+    assert xg['threshold'] == main.E.config['risk_threshold']
+    assert rep['splits'][0]['orders'] == 46026 and rep['splits'][1]['orders'] == 7890 and rep['splits'][2]['orders'] == 11836
+    assert rep['raw']['rows'] == 180519 and rep['raw']['orders'] == 65752
+    dec = json.load(open(root / 'app' / 'frontend' / 'public' / 'data' / 'decisions.json'))
+    assert sum(len(s['entries']) for s in dec['stages']) == open(root / 'DECISION_LOG.md', encoding='utf-8').read().count('\n### [') - 1  # minus the template entry

@@ -8,15 +8,34 @@ A web app for the DataCo operations team. It ranks orders by **chance of being l
 
 ## Pages
 
+**Use it** (the decision support tool)
+
 | Page | What it does |
 |---|---|
 | Home | One sentence on what needs action, three numbers, the noon pattern |
 | Check an order | Eight plain answers in, one verdict and next step out. "Try a change" shows how the risk moves. "Show the numbers" gives the reasons (SHAP) |
 | Score a file | Upload a CSV of new orders, get a ranked list, download the results. Runs in your browser |
 | Orders to handle | Critical, High and Standard orders in one list, with search |
-| Capacity planner | How much late revenue a team reaches at a given review budget |
+| Team capacity | How much late revenue a team reaches at a given review budget |
 | Replay | The queue week by week |
-| Model report | Calibration, comparison with a simple rule, tier results, known weak spots |
+| Business case | Problem, users, a day with the tool, tier actions, value, recommendation and limits |
+| Trust and limits | Calibration, comparison with a simple rule, known weak spots |
+
+**How it was built** (for the viva and the demo)
+
+| Page | Source notebook |
+|---|---|
+| 1. Problem and target | README, 01 |
+| 2. Data and EDA | 01 |
+| 3. Cleaning and split | 02 |
+| 4. Features (with a live feature builder) | 03 |
+| 5. Models (12 models and the baseline) | 04 |
+| 6. Tuning and threshold (with a threshold explorer) | 05 |
+| 7. Explainability | 05 section 6 |
+| 8. Final evaluation (Random Forest and XGBoost side by side) | 05 sections 7 and 8 |
+| 9. Prioritization | 06 |
+| 10. The app itself | app/ |
+| Decision log, Viva cheat sheet, About | DECISION_LOG.md, whole project |
 
 **What "predict" means here:** the app scores one order at the moment it is placed. It does not forecast next week's volume. Fields you are not asked for are filled with typical training values, and the page tells you which.
 
@@ -26,6 +45,7 @@ A web app for the DataCo operations team. It ranks orders by **chance of being l
 # from the repo root: rebuild the app data (needs data/processed and the trained XGBoost model)
 python app/pipeline/export_app_data.py
 python app/pipeline/export_lookups.py      # training lookup tables for scoring new orders
+python app/pipeline/export_report_data.py  # numbers for the How it was built pages (needs data/raw data and models/)
 
 # API
 cd app/backend && pip install -r requirements.txt && uvicorn main:app --port 7860

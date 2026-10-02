@@ -62,7 +62,7 @@ export function OrderCard({ o, onOpen }: { o: OrderRow; onOpen: () => void }) {
 
 /* Line chart with hover crosshair. values are 0..1, x runs 0..1 across the array. */
 export interface Series { name: string; color: string; values: number[]; dash?: string; width?: number }
-export function LineChart({ series, height = 300, marker, xTitle, yTitle, xMax = 1, xFmt = (x: number) => `${+(x * 100).toFixed(1)}%`, ticks = [0, .25, .5, .75, 1] }: { series: Series[]; height?: number; marker?: number; xTitle: string; yTitle: string; xMax?: number; xFmt?: (x: number) => string; ticks?: number[] }) {
+export function LineChart({ series, height = 300, marker, xTitle, yTitle, xMax = 1, xFmt = (x: number) => `${+(x * 100).toFixed(1)}%`, ticks = [0, .25, .5, .75, 1], tipTitle }: { series: Series[]; height?: number; marker?: number; xTitle: string; yTitle: string; xMax?: number; xFmt?: (x: number) => string; ticks?: number[]; tipTitle?: (x: string) => string }) {
   const W = 760, H = height, L = 46, R = 14, T = 12, B = 38
   const ref = useRef<SVGSVGElement>(null); const [hov, setHov] = useState<number | null>(null)
   const n = series[0].values.length - 1
@@ -86,7 +86,7 @@ export function LineChart({ series, height = 300, marker, xTitle, yTitle, xMax =
       </svg>
       {hov !== null && (
         <div className="tip" style={{ left: `${(X(hov) / W) * 100}%`, top: 8, transform: X(hov) > W * 0.6 ? 'translateX(calc(-100% - 12px))' : 'translateX(12px)' }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>{xFmt((hov / n) * xMax)} of orders reviewed</div>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>{tipTitle ? tipTitle(xFmt((hov / n) * xMax)) : `${xFmt((hov / n) * xMax)} of orders reviewed`}</div>
           {series.map(s => <div key={s.name} style={{ display: 'flex', gap: 8, alignItems: 'center' }}><i className="dot" style={{ background: s.color }} /><span style={{ flex: 1 }}>{s.name}</span><b className="num">{pct(s.values[hov], 1)}</b></div>)}
         </div>)}
     </div>

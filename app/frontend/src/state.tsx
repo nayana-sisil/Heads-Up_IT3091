@@ -1,3 +1,4 @@
+import { PAGES } from './nav'
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react'
 export const PERIODS = [
   { id: 'all', label: 'Whole test period', from: undefined, to: undefined },
@@ -19,7 +20,7 @@ export const useApp = () => useContext(C)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [alpha, setAlpha] = useState(1); const [period, setPeriod] = useState('all'); const [open, setOpen] = useState<number | null>(null)
   const [reveal, setReveal] = useState(false)
-  const raw0 = (location.hash.replace('#/', '').split('/')[0]); const initial = ['home', 'check', 'file', 'handle', 'capacity', 'replay', 'trust'].includes(raw0) ? raw0 : 'home'
+  const raw0 = (location.hash.replace('#/', '').split('/')[0]); const initial = PAGES.some(p => p.id === raw0) ? raw0 : 'home'
   const [page, setPage] = useState(initial); const [focusId, setFocusId] = useState<number | null>(null)
   const go = (p: string, id?: number) => { setPage(p); setFocusId(id ?? null); setOpen(null); history.replaceState(null, '', `#/${p}`); window.scrollTo({ top: 0 }) }
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('hu-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') } catch { return 'dark' } })
