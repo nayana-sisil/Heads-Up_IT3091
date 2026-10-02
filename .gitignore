@@ -31,4 +31,4 @@ Thumbs.db
 .vscode/
 .idea/
 *.joblib
-models/*.pkl
+models_backup/
