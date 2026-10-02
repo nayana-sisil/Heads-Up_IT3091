@@ -14,7 +14,6 @@ env/
 
 # Model artifacts
 
-models/*.joblib
 *.h5
 
 # Jupyter
@@ -32,4 +31,4 @@ Thumbs.db
 .vscode/
 .idea/
 *.joblib
-models/*.pkl
+models_backup/
