@@ -11,6 +11,22 @@ import numpy as np, pandas as pd, joblib, xgboost as xgb
 from sklearn.metrics import roc_curve, precision_recall_curve, roc_auc_score, average_precision_score, precision_score, recall_score, f1_score
 
 warnings.filterwarnings('ignore')
+import re as _re
+_KEEP = ('scikit-learn', 'Trade-In')
+def dehyph(x):
+    """Plain wording for the UI: no dashes between words (keeps names like PR-AUC, dates and place names)."""
+    if isinstance(x, dict): return {k: dehyph(v) for k, v in x.items()}
+    if isinstance(x, list): return [dehyph(v) for v in x]
+    if not isinstance(x, str): return x
+    keep = {}
+    for i, k in enumerate(_KEEP): x = x.replace(k, f'\x00{i}\x00'); keep[f'\x00{i}\x00'] = k
+    x = _re.sub(r'\s*[\u2014\u2013]\s*', ', ', x); x = x.replace(' - ', ', ')
+    x = _re.sub(r'\b([Rr])e-(?=[a-z])', r'\1e', x); x = x.replace('trade-off', 'tradeoff').replace('Trade-off', 'Tradeoff')
+    x = _re.sub(r'(?<=[A-Za-z])-(?=[a-z])', ' ', x); x = _re.sub(r'(?<=[a-z])-(?=[A-Z][a-z])', ' ', x)
+    x = _re.sub(r'(?<=[a-z]{3})-(?=\d)', ' ', x); x = _re.sub(r'(?<=\d)-(?=[a-z]{3})', ' ', x)
+    for k, v in keep.items(): x = x.replace(k, v)
+    return x
+
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / 'data' / 'processed'
 ART = ROOT / 'app' / 'backend' / 'artifacts'
@@ -181,7 +197,7 @@ report = {'raw': rawfacts, 'eda': eda, 'splits': splits, 'board': board, 'tuned_
           'models': models, 'explain': explain, 'prioritization_top10': prio, 'final_test_file': ft,
           'threshold_notes': {'cost_threshold': thr_file['cost_optimal_threshold_for_reference'], 'cost_fn': thr_file['cost_false_negative'], 'cost_fp': thr_file['cost_false_positive']}}
 OUT.mkdir(parents=True, exist_ok=True)
-json.dump(report, open(OUT / 'report.json', 'w'), separators=(',', ':'))
+json.dump(dehyph(report), open(OUT / 'report.json', 'w'), separators=(',', ':'))
 
 # ---------------- decision log ----------------
 txt = open(ROOT / 'DECISION_LOG.md', encoding='utf-8').read()
@@ -194,5 +210,5 @@ for blk in re.split(r'\n(?=## Stage )', txt)[1:]:
         fields = {k.lower(): v.strip() for k, v in re.findall(r'^- \*\*([^*:]+):\*\* (.*)$', e, flags=re.M)}
         entries.append({'date': m.group(1), 'title': m.group(2).strip(), 'made_by': fields.get('made by', ''), 'decision': fields.get('decision', ''), 'reason': fields.get('reason', ''), 'alternatives': fields.get('alternatives considered', '')})
     stages.append({'stage': title, 'entries': entries})
-json.dump({'stages': stages}, open(OUT / 'decisions.json', 'w'), separators=(',', ':'))
+json.dump(dehyph({'stages': stages}), open(OUT / 'decisions.json', 'w'), separators=(',', ':'))
 print('report.json', (OUT / 'report.json').stat().st_size // 1024, 'KB; decisions', sum(len(s['entries']) for s in stages), 'entries in', len(stages), 'stages')

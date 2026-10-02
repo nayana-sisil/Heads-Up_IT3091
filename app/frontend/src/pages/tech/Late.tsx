@@ -68,7 +68,7 @@ export function System() {
           { icon: 'log', title: 'Notebooks 01 to 06', text: 'EDA, cleaning, features, models, tuning, prioritization', color: 'var(--brand)' },
           { icon: 'code', title: 'Export scripts', text: 'export_app_data, export_lookups, export_report_data', color: 'var(--high)' },
           { icon: 'box', title: 'Model and data files', text: 'XGBoost trees, scaler, lookups, report numbers', color: 'var(--acc)' },
-          { icon: 'eye', title: 'This site', text: 'React page with an in-browser XGBoost and SHAP engine', color: 'var(--good)' },
+          { icon: 'eye', title: 'This site', text: 'React page with an in browser XGBoost and SHAP engine', color: 'var(--good)' },
         ]} />
         
         <p className="note" style={{ marginTop: 10 }}>A FastAPI version of the same engine also exists for running on a server or in Docker.</p>
@@ -76,7 +76,7 @@ export function System() {
       <div className="grid g3">
         <Stat icon="check" color="var(--good)" label="Browser vs Python model" value="0.00004" sub="largest difference in predicted chance on stored orders. SHAP values identical." />
         <Stat icon="layers" color="var(--brand)" label="Features from raw fields" value="11,836 of 11,836" sub="test orders rebuilt from raw fields give the same tier. Largest difference 0.00005." />
-        <Stat icon="server" color="var(--high)" label="Backend tests" value="16 pass" sub="API, what-if, new order scoring, unknown country fallback, bad input" />
+        <Stat icon="server" color="var(--high)" label="Backend tests" value="16 pass" sub="API, what if, new order scoring, unknown country fallback, bad input" />
       </div>
       <div className="two">
         <Card title="What it is made of">

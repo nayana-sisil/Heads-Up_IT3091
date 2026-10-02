@@ -21,28 +21,26 @@ export function Problem() {
           { icon: 'flag', title: 'Ranked queue', text: 'The team acts on the top of the list.', color: 'var(--crit)' },
         ]} />
       </Card>
-      <div className="two">
+      <div className="two" style={{ alignItems: 'stretch' }}>
         <Card title="What counts as late" lead={`The target is Late_delivery_risk. Delivery Status maps to it like this, over all ${num(r.raw.rows)} order lines.`}>
-          {st.map((x: any) => { const t = x.on_time + x.late; return (
+          {st.map((x: any) => { const t = x.on_time + x.late; const mx = Math.max(...st.map((q: any) => q.on_time + q.late)); return (
             <div key={x.status} className="barrow" style={{ gridTemplateColumns: '130px 1fr 70px' }}>
               <div className="lbl">{x.status}</div>
-              <div className="stack" style={{ margin: 0, height: 12 }}><div style={{ width: `${(x.on_time / t) * 100}%`, background: 'var(--good)', display: x.on_time ? undefined : 'none' }} title={`${num(x.on_time)} on time (target 0)`} /><div style={{ width: `${(x.late / t) * 100}%`, background: 'var(--crit)', display: x.late ? undefined : 'none' }} title={`${num(x.late)} late (target 1)`} /></div>
+              <div className="stack" style={{ margin: 0, height: 12, width: `${(t / mx) * 100}%` }}><div style={{ width: `${(x.on_time / t) * 100}%`, background: 'var(--good)', display: x.on_time ? undefined : 'none' }} title={`${num(x.on_time)} on time (target 0)`} /><div style={{ width: `${(x.late / t) * 100}%`, background: 'var(--crit)', display: x.late ? undefined : 'none' }} title={`${num(x.late)} late (target 1)`} /></div>
               <div className="val num">{num(t)}</div>
             </div>) })}
           <div className="legend" style={{ marginTop: 10 }}><span><i className="sw" style={{ background: 'var(--good)' }} />Target 0, not late</span><span><i className="sw" style={{ background: 'var(--crit)' }} />Target 1, late</span></div>
           <Note>Every status maps to exactly one target value. "Shipping canceled" ({pc(r.raw.canceled_share)} of lines) is coded 0 in the data, and we kept it as given after checking.</Note>
         </Card>
         <Card title="Out of 100 orders" lead="The split is close to balanced, so accuracy alone would not mislead us.">
-          <Dots100 cats={[{ n: lateN, color: 'var(--crit)', label: 'arrive late' }, { n: 100 - lateN, color: 'var(--good)', label: 'arrive on time' }]} />
+          <Dots100 max={250} cats={[{ n: lateN, color: 'var(--crit)', label: 'arrive late' }, { n: 100 - lateN, color: 'var(--good)', label: 'arrive on time' }]} />
         </Card>
       </div>
       <div className="two">
         <Card title="Why Recall" lead="Catching late orders matters more than raw accuracy. The reason changed after we looked at the data, and we logged both versions.">
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', margin: '4px 0 12px' }}>
-            {[1, 2, 3].map(i => <div key={i} style={{ flex: 1, height: 54, borderRadius: 10, background: 'var(--crit)', display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800 }}>{i === 2 ? 'missed late order = 3' : ''}</div>)}
-            <div style={{ flex: 1, height: 18, borderRadius: 8, background: 'var(--high)' }} title="a false alarm costs 1" />
-          </div>
-          <Note>A missed late order costs {r.threshold_notes.cost_fn}. A false alarm costs {r.threshold_notes.cost_fp}, a quick check.</Note>
+          <div className="costrow"><span className="cl">Missed late order</span><span className="cb">{[1, 2, 3].map(i => <i key={i} style={{ background: 'var(--crit)' }}>1</i>)}</span><b>costs {r.threshold_notes.cost_fn}</b></div>
+          <div className="costrow"><span className="cl">False alarm</span><span className="cb"><i style={{ background: 'var(--high)' }}>1</i></span><b>costs {r.threshold_notes.cost_fp}</b></div>
+          <p className="note" style={{ margin: '12px 0 0' }}>A false alarm only costs a quick check. A missed order brings penalties and an unhappy customer.</p>
         </Card>
         <Card title="How the reason changed">
           <Steps items={[

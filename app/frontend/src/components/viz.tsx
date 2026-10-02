@@ -36,13 +36,13 @@ export function StatTile({ icon, label, value, to, fmt, sub, color = 'var(--acc,
 
 /* 100 dots. Each category fills dots in order; used to show "out of 100 orders". */
 export interface DotCat { n: number; color: string; label: string }
-export function Dots100({ cats, cols = 10, size = 22 }: { cats: DotCat[]; cols?: number; size?: number }) {
+export function Dots100({ cats, cols = 10, size = 22, max = 360 }: { cats: DotCat[]; cols?: number; size?: number; max?: number }) {
   const total = cats.reduce((a, c) => a + c.n, 0), dots: DotCat[] = []
   cats.forEach(c => { for (let i = 0; i < c.n; i++) dots.push(c) })
   const w = cols * size
   return (
     <div>
-      <svg viewBox={`0 0 ${w} ${Math.ceil(total / cols) * size}`} width="100%" style={{ maxWidth: 360 }} role="img" aria-label={cats.map(c => `${c.n} ${c.label}`).join(', ')}>
+      <svg viewBox={`0 0 ${w} ${Math.ceil(total / cols) * size}`} width="100%" style={{ maxWidth: max }} role="img" aria-label={cats.map(c => `${c.n} ${c.label}`).join(', ')}>
         {dots.map((c, i) => <circle key={i} cx={(i % cols) * size + size / 2} cy={Math.floor(i / cols) * size + size / 2} r={size * 0.36} fill={c.color} className="pop" style={{ animationDelay: `${i * 6}ms` }}><title>{c.label}</title></circle>)}
       </svg>
       <div className="legend" style={{ marginTop: 10 }}>{cats.filter(c => c.n > 0).map(c => <span key={c.label}><i className="sw" style={{ background: c.color }} /><b>{c.n}</b> {c.label}</span>)}</div>

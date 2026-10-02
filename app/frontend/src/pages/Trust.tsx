@@ -18,7 +18,7 @@ export default function Trust() {
         <div className="wm" aria-hidden>✓</div>
         <div className="badge"><Icon name="trust" size={15} />The honest summary</div>
         <h2>The model puts the right orders at the top. A simple shipping rule does almost as well.</h2>
-        <p className="sub2">In the top 10% of the queue, Heads Up reaches {pct(te.schemes['Heads Up']['10'].revenue_reached, 1)} of late revenue on the test orders, against {pct(te.schemes['Simple rule']['10'].revenue_reached, 1)} for a two-line shipping rule. That is a tie. The model adds a separate chance for every order and a reason for each one, which a rule cannot give.</p>
+        <p className="sub2">In the top 10% of the queue, Heads Up reaches {pct(te.schemes['Heads Up']['10'].revenue_reached, 1)} of late revenue on the test orders, against {pct(te.schemes['Simple rule']['10'].revenue_reached, 1)} for a two line shipping rule. That is a tie. The model adds a separate chance for every order and a reason for each one, which a rule cannot give.</p>
       </section>
       <div className="grid g4">
         <StatTile label="Recall at the threshold" value={<>{pct(op.recall)}</>} sub={<>of late orders caught (validation {pct(opv.recall)})</>} />
