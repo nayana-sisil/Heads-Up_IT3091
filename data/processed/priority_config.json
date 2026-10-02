@@ -1,0 +1,17 @@
+{
+  "formula": "priority = p_late ** alpha * Sales",
+  "alpha": 1.0,
+  "risk_threshold": 0.38,
+  "tier_cutoffs_priority_score": {
+    "critical_min": 707.5980169246834,
+    "high_min": 407.10172694931333
+  },
+  "tiers_defined_on": "validation priority score: top 10 percent Critical, next 20 percent High",
+  "value_column": "Sales (order level, real currency)",
+  "default_review_budgets": [
+    0.05,
+    0.1,
+    0.2,
+    0.3
+  ]
+}
