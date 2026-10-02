@@ -10,19 +10,22 @@ A web app for the DataCo operations team. It ranks orders by **chance of being l
 
 | Page | What it does |
 |---|---|
-| Today | Revenue at risk, tier mix, risk by shipping option and region, the noon cliff |
-| Action board | Critical, High and Standard lanes with search and filters |
-| Order drawer | Chance of late, priority score, SHAP reasons, suggested action |
-| Capacity | How much late revenue a team reaches at a given review budget |
-| What if | Change shipping option, hour, payment or customer and watch the risk move |
+| Home | One sentence on what needs action, three numbers, the noon pattern |
+| Check an order | Eight plain answers in, one verdict and next step out. "Try a change" shows how the risk moves. "Show the numbers" gives the reasons (SHAP) |
+| Score a file | Upload a CSV of new orders, get a ranked list, download the results. Runs in your browser |
+| Orders to handle | Critical, High and Standard orders in one list, with search |
+| Capacity planner | How much late revenue a team reaches at a given review budget |
 | Replay | The queue week by week |
-| Trust | Calibration, comparison with a simple rule, tier results, known weak spots |
+| Model report | Calibration, comparison with a simple rule, tier results, known weak spots |
+
+**What "predict" means here:** the app scores one order at the moment it is placed. It does not forecast next week's volume. Fields you are not asked for are filled with typical training values, and the page tells you which.
 
 ## Run it yourself
 
 ```bash
 # from the repo root: rebuild the app data (needs data/processed and the trained XGBoost model)
 python app/pipeline/export_app_data.py
+python app/pipeline/export_lookups.py      # training lookup tables for scoring new orders
 
 # API
 cd app/backend && pip install -r requirements.txt && uvicorn main:app --port 7860
@@ -33,6 +36,7 @@ cd app/frontend && npm install && npm run dev      # opens on http://localhost:5
 # static build (no server, this is what Hugging Face hosts)
 python app/pipeline/make_static_data.py
 cd app/frontend && npm run build:static             # output in dist-static
+npm run check:features                               # rebuilds features for all 11,836 test orders and compares
 python app/deploy_static.py                          # needs HF_TOKEN in the environment
 
 # or build everything as one container (needs a host that runs Docker)

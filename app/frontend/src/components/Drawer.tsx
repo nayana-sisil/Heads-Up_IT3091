@@ -61,7 +61,7 @@ export function Drawer() {
             {reveal && <div className={`callout ${o.late ? 'crit' : ''}`} style={{ marginTop: 12 }}><b>What really happened</b>{o.late ? 'This order was delivered late.' : 'This order arrived on time.'}</div>}
           </Card>
           <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <button className="btn primary" onClick={() => go('whatif', o.id)}>Try it in What if</button>
+            <button className="btn primary" onClick={() => go('check', o.id)}>Check and change this order</button>
             <button className="btn" onClick={() => setOpen(null)}>Close</button>
           </div>
         </>}

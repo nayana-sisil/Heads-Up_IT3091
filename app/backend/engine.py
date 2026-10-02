@@ -30,6 +30,7 @@ class Engine:
         self.drivers = {o['id']: o['drivers'] for o in blob['orders']}
         self.raw = pd.read_csv(ART / 'features_test.csv.gz').set_index('Order Id')
         self.trust = json.load(open(ART / 'trust.json'))
+        self.L = json.load(open(ART / 'lookups.json'))
         self.thr = self.config['risk_threshold']
         self.crit = self.config['tier_cutoffs']['critical_min']; self.high = self.config['tier_cutoffs']['high_min']
 
@@ -44,6 +45,51 @@ class Engine:
         p = float(self.booster.predict(d)[0])
         contrib = self.booster.predict(d, pred_contribs=True)[0]
         return p, contrib[:-1], float(contrib[-1])
+
+    def build_features(self, o: dict):
+        """Plain order fields -> the 28 unscaled model inputs (same rules as notebook 03, lookups from TRAIN only)."""
+        L = self.L; assumed, notes = [], []
+        when = pd.Timestamp(o['when']); sales = float(o['sales']); qty = float(o['qty'])
+        lines, distinct, profit = o.get('lines'), o.get('distinct'), o.get('profit')
+        if lines is None:
+            lines = int(min(5, max(1, round(sales / 200)))); assumed.append(f'{lines} order lines (guessed from the order value)')
+        if distinct is None:
+            distinct = L['lines_default'][str(int(lines))]['distinct']; assumed.append(f'{distinct} product categories in the order')
+        if profit is None:
+            profit = sales * L['median_margin']; assumed.append('typical profit (about 20% of the order value)')
+        region = o.get('region') or L['country_region'].get(o['country'], '')
+        crate = L['country_late_rate'].get(o['country'])
+        if crate is None: crate = L['global_late_rate']; notes.append(f'The model never saw "{o["country"]}", so it used the average late rate.')
+        rrate = L['region_late_rate'].get(region, L['global_late_rate'])
+        cfreq = L['category_frequency'].get(o['category'])
+        if cfreq is None: cfreq = L['category_frequency_fallback']; notes.append(f'The model never saw the product category "{o["category"]}", so it treated it as rare.')
+        lo, hi = L['benefit_cap']; mode = o['mode']
+        r = {'Sales': sales, 'Order Item Quantity': qty, 'Benefit per order': profit, 'n_line_items': lines, 'n_distinct_categories': distinct,
+             'Benefit_per_order_capped': min(hi, max(lo, profit)), 'priority_value_component': sales, 'order_hour': when.hour,
+             'order_dayofweek': when.dayofweek, 'order_month': when.month, 'order_is_weekend': int(when.dayofweek >= 5),
+             'order_is_holiday_season': int(when.month in (11, 12)), 'sales_per_scheduled_day': sales / max(SHIP_DAYS[mode], 1),
+             'is_express_shipping': int(mode in ('First Class', 'Same Day')), 'country_delay_rate': crate, 'region_delay_rate': rrate, 'category_frequency': cfreq}
+        for m in MODES: r[f'Shipping Mode_{m}'] = int(m == mode)
+        for s in SEGMENTS: r[f'Customer Segment_{s}'] = int(s == o['segment'])
+        for t in TYPES: r[f'Type_{t}'] = int(t == o['pay_type'])
+        return pd.Series(r), assumed, notes, region
+
+    def check(self, o: dict, alpha=1.0):
+        row, assumed, notes, region = self.build_features(o)
+        p, c, base = self.score_row(row); sales = float(o['sales'])
+        idx = np.argsort(-np.abs(c))[:8]
+        return {'p': p, 'sales': sales, 'priority': p * sales, 'score': (p ** alpha) * sales if alpha > 0 else sales, 'tier': self.tier(p, sales), 'flag': p >= self.thr,
+                'assumed': assumed, 'notes': notes, 'region': region, 'base_value': base, 'threshold': self.thr,
+                'drivers': [{'label': LABEL.get(self.features[j], self.features[j]), 'shap': round(float(c[j]), 3)} for j in idx]}
+
+    def score_many(self, rows: list):
+        X = pd.DataFrame([self.build_features(o)[0] for o in rows])[self.features].astype(float)
+        for c, ms in self.scaler.items(): X[c] = (X[c] - ms['mean']) / ms['std']
+        p = self.booster.predict(xgb.DMatrix(X.values, feature_names=self.features))
+        out = []
+        for o, pi in zip(rows, p):
+            s = float(o['sales']); pi = float(pi); out.append({'p': pi, 'sales': s, 'priority': pi * s, 'tier': self.tier(pi, s), 'flag': pi >= self.thr})
+        return out
 
     def tier(self, p, sales):
         pr = p * sales

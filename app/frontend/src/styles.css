@@ -130,3 +130,27 @@ table.t tr:last-child td{border-bottom:0}
 @media(max-width:600px){.tiles{grid-template-columns:1fr}}
 .drawer .drv{grid-template-columns:200px 1fr 50px}
 @media(max-width:820px){.drawer .drv{grid-template-columns:130px 1fr 44px}}
+
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin-top:16px}
+.formgrid label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink2)}
+.formgrid .input,.formgrid .select{width:100%;font-weight:400;color:var(--ink)}
+@media(max-width:600px){.formgrid{grid-template-columns:1fr}}
+.fold{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 18px;box-shadow:var(--shadow)}
+.fold summary{cursor:pointer;font-weight:700;list-style:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary:after{content:"+";float:right;color:var(--ink3)}
+.fold[open] summary:after{content:"−"}
+.big3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+@media(max-width:700px){.big3{grid-template-columns:1fr}}
+.dropzone{border:2px dashed var(--line);border-radius:16px;padding:26px;text-align:center;color:var(--ink2);cursor:pointer}
+.dropzone.over,.dropzone:hover{border-color:var(--brand);color:var(--ink)}
+.navsec{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink3);font-weight:700;padding:14px 11px 4px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px;cursor:pointer;font-weight:600;color:var(--ink2)}
+.tabs button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.listgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+@media(max-width:900px){.listgrid{grid-template-columns:1fr}}
+.dropzone{display:block}
+.segfull{display:grid;grid-template-columns:repeat(4,1fr);width:100%}
+.segfull button{padding:7px 4px;text-align:center}
+@media(max-width:600px){.segfull{grid-template-columns:repeat(2,1fr)}}

@@ -79,3 +79,41 @@ def test_trust_reports_known_numbers():
     te = t['splits']['test']
     assert te['schemes']['Heads Up']['10']['revenue_reached'] > te['schemes']['Risk only']['10']['revenue_reached']
     assert te['schemes']['Oracle']['10']['revenue_reached'] >= te['schemes']['Heads Up']['10']['revenue_reached']
+
+
+def test_rebuilt_features_match_saved_for_all_test_orders():
+    """Rebuild features from raw order fields for every test order and compare with the saved predictions."""
+    import pandas as pd, numpy as np
+    raw = pd.read_csv(Path(__file__).resolve().parents[3] / 'data' / 'processed' / 'test.csv')
+    rows = [dict(mode=r['Shipping Mode'], when=r['order date (DateOrders)'], pay_type=r['Type'], segment=r['Customer Segment'], country=r['Order Country'],
+                 category=r['Category Name'], qty=r['Order Item Quantity'], sales=r['Sales'], profit=r['Benefit per order'], lines=int(r['n_line_items']),
+                 distinct=int(r['n_distinct_categories']), region=r['Order Region']) for _, r in raw.iterrows()]
+    out = main.E.score_many(rows)
+    saved = main.E.df.set_index('id').loc[raw['Order Id'].values]
+    assert np.abs(np.array([o['p'] for o in out]) - saved['p'].values).max() < 1e-4
+    assert [o['tier'] for o in out] == saved['tier'].tolist()
+
+
+def test_check_new_order_and_defaults():
+    body = dict(mode='Same Day', when='2026-10-05T15:00', pay_type='DEBIT', segment='Consumer', country='Estados Unidos', category="Women's Apparel", qty=6, sales=900)
+    r = c.post('/api/check', json=body).json()
+    assert r['p'] > 0.9 and r['tier'] in ('Critical', 'High') and r['assumed']
+    safe = c.post('/api/check', json={**body, 'when': '2026-10-05T09:00'}).json()
+    assert safe['p'] < 0.15 and safe['tier'] == 'Standard'
+
+
+def test_check_unknown_country_falls_back_and_rejects_bad_input():
+    body = dict(mode='Standard Class', when='2026-10-05T10:00', pay_type='DEBIT', segment='Consumer', country='Atlantis', category='Zzz', qty=2, sales=100)
+    r = c.post('/api/check', json=body).json()
+    assert len(r['notes']) == 2 and 0 <= r['p'] <= 1
+    assert c.post('/api/check', json={**body, 'mode': 'Teleport'}).status_code == 422
+    assert c.post('/api/check', json={**body, 'when': 'not a date'}).status_code == 422
+    assert c.post('/api/check', json={**body, 'sales': 0}).status_code == 422
+
+
+def test_score_many_and_lookups():
+    body = dict(mode='Standard Class', when='2026-10-05T10:00', pay_type='DEBIT', segment='Consumer', country='India', category='Cleats', qty=2, sales=100)
+    r = c.post('/api/score', json={'rows': [body, {**body, 'mode': 'First Class'}]}).json()
+    assert len(r) == 2 and r[1]['p'] > r[0]['p']
+    L = c.get('/api/lookups').json()
+    assert 'Estados Unidos' in L['countries'] and len(L['categories']) == 24

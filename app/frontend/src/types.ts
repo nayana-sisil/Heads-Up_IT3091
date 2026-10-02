@@ -7,3 +7,6 @@ export interface Summary { orders: number; flagged: number; revenue_at_risk: num
 export interface Capacity { orders: number; review_n: number; budget: number; alpha: number; revenue_reached: number; precision: number; late_revenue_total: number; late_revenue_reached: number; oracle_reached: number; wasted_reviews: number; curves: Record<string, number[]> }
 export interface WhatIfSide { p: number; priority: number; tier: Tier; sales: number; drivers?: { label: string; shap: number }[] }
 export interface WhatIfResult { before: WhatIfSide; after: WhatIfSide }
+export interface CheckInput { mode: string; when: string; pay_type: string; segment: string; country: string; category: string; qty: number; sales: number; profit?: number | null; lines?: number | null; distinct?: number | null; region?: string | null }
+export interface CheckResult { p: number; sales: number; priority: number; score: number; tier: Tier; flag: boolean; assumed: string[]; notes: string[]; region: string; drivers: { label: string; shap: number }[]; base_value: number; threshold: number }
+export interface LookupInfo { countries: string[]; categories: string[]; typical: { Sales: number; 'Order Item Quantity': number }; sales_range: [number, number]; region_of: Record<string, string>; threshold: number }

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / 'backend' / 'artifacts'
 OUT = ROOT / 'frontend' / 'public' / 'data'
 OUT.mkdir(parents=True, exist_ok=True)
-for name in ('trust.json', 'config.json', 'scaler.json'):
+for name in ('trust.json', 'config.json', 'scaler.json', 'lookups.json'):
     shutil.copy(ART / name, OUT / name)
 shutil.copy(ART / 'orders.json.gz', OUT / 'orders.dat')   # gzip data; the app detects it
 # model: keep only what the browser needs

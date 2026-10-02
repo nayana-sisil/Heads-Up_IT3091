@@ -1,5 +1,6 @@
 /* Same routes as the FastAPI service, answered in the browser. */
 import { Engine, loadEngine, predict, scaleRow, shap } from './engine'
+import { buildFeatures, OrderInput, MODES as MODE_LIST } from './features'
 
 const SHIP_DAYS: Record<string, number> = { 'First Class': 1, 'Same Day': 0, 'Second Class': 2, 'Standard Class': 4 }
 const MODES = Object.keys(SHIP_DAYS), SEGMENTS = ['Consumer', 'Corporate', 'Home Office'], TYPES = ['CASH', 'DEBIT', 'PAYMENT', 'TRANSFER']
@@ -71,6 +72,20 @@ function whatif(id: number, b: any) {
     after: { p, priority: p * sales, tier: tierOf(p, sales), sales, drivers: idx.map(j => ({ label: LABEL[E.features[j]] ?? E.features[j], shap: Math.round(phi[j] * 1e3) / 1e3 })) },
   }
 }
+
+/* Score ONE new order from plain fields. This is the "predict" feature. */
+export function checkOrder(input: OrderInput, alpha = 1, explain = true) {
+  if (!MODE_LIST.includes(input.mode)) throw new Error('422')
+  const b = buildFeatures(E.lookups, E.rawCols, input)
+  const x = scaleRow(E, b.row, E.rawCols), p = predict(E, x), phi = explain ? shap(E, x) : new Float64Array(E.features.length)
+  const sales = Number(input.sales), pr = alpha > 0 ? Math.pow(p, alpha) * sales : sales
+  const idx = [...phi.keys()].sort((a, c) => Math.abs(phi[c]) - Math.abs(phi[a])).slice(0, 8)
+  return { p, sales, priority: p * sales, score: pr, tier: tierOf(p, sales), flag: p >= E.config.risk_threshold, assumed: b.assumed, notes: b.notes, region: b.region,
+    drivers: idx.map(j => ({ label: LABEL[E.features[j]] ?? E.features[j], shap: Math.round(phi[j] * 1e3) / 1e3 })), base_value: E.baseValue, threshold: E.config.risk_threshold }
+}
+export function scoreMany(inputs: OrderInput[]) { return inputs.map(i => { const b = buildFeatures(E.lookups, E.rawCols, i); const p = predict(E, scaleRow(E, b.row, E.rawCols)); return { p, sales: Number(i.sales), priority: p * Number(i.sales), tier: tierOf(p, Number(i.sales)), flag: p >= E.config.risk_threshold } }) }
+export const lookups = () => E.lookups
+export const engineConfig = () => E.config
 
 function capacity(q: URLSearchParams) {
   const alpha = Number(q.get('alpha') ?? 1), budget = Number(q.get('budget') ?? 0.1)

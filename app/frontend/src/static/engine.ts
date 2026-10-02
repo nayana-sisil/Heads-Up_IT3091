@@ -2,8 +2,9 @@
 export interface Tree { left: Int32Array; right: Int32Array; feat: Int32Array; cond: Float64Array; dl: Uint8Array; cover: Float64Array; depth: number }
 export interface Engine {
   config: any; scaler: Record<string, { mean: number; std: number }>; features: string[]; trees: Tree[]; baseMargin: number; bias: number
-  orders: any[]; drivers: Map<number, any[]>; baseValue: number; raw: Map<number, Float64Array>; trust: any; rawCols: string[]
+  lookups: Lookups; orders: any[]; drivers: Map<number, any[]>; baseValue: number; raw: Map<number, Float64Array>; trust: any; rawCols: string[]
 }
+import type { Lookups } from './features'
 const sigmoid = (z: number) => 1 / (1 + Math.exp(-z))
 
 async function gz(url: string) {
@@ -19,9 +20,9 @@ async function gz(url: string) {
 const json = async (url: string) => (await fetch(url)).json()
 
 export async function loadEngine(base = ''): Promise<Engine> {
-  const [config, scalerFile, model, ordersBlob, feats, trust] = await Promise.all([
+  const [config, scalerFile, model, ordersBlob, feats, trust, lookups] = await Promise.all([
     json(`${base}data/config.json`), json(`${base}data/scaler.json`), json(`${base}data/model.json`),
-    gz(`${base}data/orders.dat`), gz(`${base}data/features_test.dat`), json(`${base}data/trust.json`)])
+    gz(`${base}data/orders.dat`), gz(`${base}data/features_test.dat`), json(`${base}data/trust.json`), json(`${base}data/lookups.json`)])
   const trees: Tree[] = model.trees.map((t: any) => {
     const n = t.left_children.length; const tr: Tree = { left: Int32Array.from(t.left_children), right: Int32Array.from(t.right_children), feat: Int32Array.from(t.split_indices), cond: Float64Array.from(t.split_conditions, Math.fround), dl: Uint8Array.from(t.default_left), cover: Float64Array.from(t.sum_hessian), depth: 0 }
     const walk = (i: number, d: number) => { tr.depth = Math.max(tr.depth, d); if (tr.left[i] >= 0) { walk(tr.left[i], d + 1); walk(tr.right[i], d + 1) } }
@@ -37,7 +38,7 @@ export async function loadEngine(base = ''): Promise<Engine> {
   const raw = new Map<number, Float64Array>(); feats.ids.forEach((id: number, k: number) => raw.set(id, Float64Array.from(feats.rows[k])))
   const orders = ordersBlob.orders.map((o: any) => ({ ...o, dt: new Date(o.date.replace(' ', 'T')), hour: Number(o.date.slice(11, 13)) }))
   const drivers = new Map<number, any[]>(); orders.forEach((o: any) => drivers.set(o.id, o.drivers))
-  return { config, scaler: scalerFile.scaled, features: scalerFile.features, trees, baseMargin, bias, orders, drivers, baseValue: ordersBlob.base_value, raw, trust, rawCols: feats.cols }
+  return { lookups, config, scaler: scalerFile.scaled, features: scalerFile.features, trees, baseMargin, bias, orders, drivers, baseValue: ordersBlob.base_value, raw, trust, rawCols: feats.cols }
 }
 
 function leafValue(t: Tree, x: Float64Array) {

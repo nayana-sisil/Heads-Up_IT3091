@@ -64,6 +64,39 @@ class WhatIf(BaseModel):
     sales: Optional[float] = None
 
 
+class NewOrder(BaseModel):
+    mode: str; when: str; pay_type: str; segment: str; country: str; category: str; qty: float; sales: float
+    profit: Optional[float] = None; lines: Optional[int] = None; distinct: Optional[int] = None; region: Optional[str] = None
+    def check(self):
+        if self.mode not in MODES or self.segment not in SEGMENTS or self.pay_type not in TYPES or self.sales <= 0 or self.qty <= 0:
+            raise HTTPException(422, 'Invalid order')
+        try: __import__('pandas').Timestamp(self.when)
+        except Exception: raise HTTPException(422, 'Bad date')
+        return self.model_dump()
+
+
+class ScoreBody(BaseModel):
+    rows: list[NewOrder]
+
+
+@app.get('/api/lookups')
+def lookups():
+    L = E.L; c = L['country_orders']
+    return {'countries': sorted(c, key=lambda k: -c[k]), 'categories': sorted(L['category_frequency']), 'typical': L['typical'], 'sales_range': L['sales_range'],
+            'region_of': L['country_region'], 'threshold': E.thr}
+
+
+@app.post('/api/check')
+def check_order(body: NewOrder):
+    return E.check(body.check())
+
+
+@app.post('/api/score')
+def score_rows(body: ScoreBody):
+    if len(body.rows) > 20000: raise HTTPException(413, 'Too many rows')
+    return E.score_many([r.check() for r in body.rows])
+
+
 @app.post('/api/orders/{order_id}/whatif')
 def whatif(order_id: int, body: WhatIf):
     if order_id not in E.raw.index: raise HTTPException(404, 'Order not found')
