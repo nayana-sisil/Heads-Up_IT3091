@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
+import { localGet, localPost } from './static/localApi'
+export const STATIC = import.meta.env.VITE_STATIC === '1'
 export async function get<T>(url: string): Promise<T> {
+  if (STATIC) return (await localGet(url)) as T
   const r = await fetch(url); if (!r.ok) throw new Error(`${r.status}`); return r.json()
 }
 export async function post<T>(url: string, body: unknown): Promise<T> {
+  if (STATIC) return (await localPost(url, body)) as T
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   if (!r.ok) throw new Error(`${r.status}`); return r.json()
 }

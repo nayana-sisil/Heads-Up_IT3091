@@ -1,17 +1,8 @@
----
-title: Heads Up
-emoji: 📦
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
-short_description: Late delivery risk and shipment prioritization
----
-
 # Heads Up: decision support app
 
 A web app for the DataCo operations team. It ranks orders by **chance of being late × order value**, shows why each order is risky, and lets you test what would change the risk.
+
+**Live demo:** https://huggingface.co/spaces/nayanasisil2700/heads-up (free static Space, the model runs in your browser).
 
 **Engine:** tuned XGBoost. **Demo data:** the 11,836 test orders (Aug 2017 to Jan 2018) from the DataCo Smart Supply Chain dataset. The test set was not used to choose any setting.
 
@@ -39,9 +30,16 @@ cd app/backend && pip install -r requirements.txt && uvicorn main:app --port 786
 # web interface (development)
 cd app/frontend && npm install && npm run dev      # opens on http://localhost:5173
 
-# or build everything as one container
+# static build (no server, this is what Hugging Face hosts)
+python app/pipeline/make_static_data.py
+cd app/frontend && npm run build:static             # output in dist-static
+python app/deploy_static.py                          # needs HF_TOKEN in the environment
+
+# or build everything as one container (needs a host that runs Docker)
 cd app && docker build -t heads-up . && docker run -p 7860:7860 heads-up
 ```
+
+The static build runs the XGBoost trees and exact TreeSHAP in the browser. A check against the Python API gave probability differences below 0.000001 and identical SHAP values on 48 what-if cases.
 
 Run the API tests with `cd app/backend && python -m pytest tests`.
 

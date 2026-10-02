@@ -3,3 +3,4 @@ dist/
 backend/static/
 __pycache__/
 .pytest_cache/
+dist-static/
