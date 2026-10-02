@@ -288,4 +288,26 @@ Each entry is a bullet list under a dated heading:
 - **Reason:** The 2026-09-19 plan was to keep an unscaled copy so an operations user sees a real order value. The saved file does not do that: it was written after scaling in `notebooks/03_feature_engineering.ipynb`, so it holds standardized values (average -0.09, spread 1.05, including negative numbers). `priority_value_component` is also identical to `Sales` in all three splits, so it adds no information and can be dropped from the model features in a later clean up. Both issues were found by checking the file contents, not by an error.
 - **Alternatives considered:** Overwriting the old file. Rejected, since two notebooks reference it and a changed schema could break them without a visible error. Renaming the old file. Not done yet; worth doing once the references in `03_feature_engineering.ipynb` and the experiment notebook are updated.
 
+---
+
+## Stage 10: Decision Support App
+
+### [2026-10-02] The app runs on XGBoost, not the Random Forest
+- **Made by:** Nayana
+- **Decision:** The deployed app uses the tuned XGBoost model for scoring, reasons and the what-if tool. The tuned Random Forest stays the model evaluated in the report for the primary lens (Stage 8). The app and the report must both say which model each number comes from.
+- **Reason:** The Random Forest file is 103 MB, over the 100 MB GitHub file limit and too heavy for free hosting. SHAP on it takes about 15 minutes for 1,000 orders, so "why is this order risky?" cannot run live. The XGBoost file is 0.7 MB and explains an order in about a second. The 2026-10-01 entry already found the two models tied at the chosen operating point, and said XGBoost could replace the Random Forest with no real loss. Scored on the same splits, XGBoost gives validation ROC-AUC 0.768 and test 0.772. With the same Recall 0.80 rule the threshold is 0.39 (validation Recall 0.809, Precision 0.636, 69% flagged). On test it reaches Recall 0.855 and Precision 0.631 with 75% flagged. The same warning as before applies: the share of flagged orders rises on later data.
+- **Alternatives considered:** Keep the Random Forest and ship pre-computed scores only. Rejected, since the app would be a static viewer with no what-if tool and no live reasons. Compress the Random Forest. Not tried, since cutting trees would change the model we evaluated.
+
+### [2026-10-02] Prioritization re-run with XGBoost: same conclusion, better calibration
+- **Made by:** Nayana
+- **Decision:** Recompute the priority score, tiers and evaluation with XGBoost and use these numbers in the app. The Stage 9 conclusions stand.
+- **Reason:** In the top 10% queue, Risk x Sales reaches 27.8% of late revenue on validation and 36.2% on test. A simple Shipping Mode plus Same Day noon rule reaches 27.3% and 36.0%, so the tie remains. Risk only reaches 18.8% and 19.0%, Sales only 20.3% and 31.9%, and the oracle ceiling is 34.7% and 48.4%. XGBoost is better calibrated than the Random Forest: every risk decile sits within about 5 points of the diagonal on both splits, while the Random Forest under-predicted its lowest decile by 9 points. That makes the chance x Sales product safer to read as an expected value. New tier cut points from validation (top 10% Critical, next 20% High): priority score 697 and 398. On test, 4.9% of orders are Critical and 9.0% are High (late rate 87% and 74%, Standard 51%), so the order value drift from the 2026-10-02 Stage 9 entry still applies.
+- **Alternatives considered:** Keeping the Random Forest cut points (708 and 407). Rejected, since the tiers must match the model that scores the orders.
+
+### [2026-10-02] App design: a control tower built as a real web app, evaluated on replayed test orders
+- **Made by:** Nayana
+- **Decision:** Build the app as a FastAPI service plus a React interface in one container, deployed on Hugging Face Spaces. Pages: Today, Action board, order drawer, Capacity planner, What if, Replay and Trust. Demo data is the 11,836 test orders, scored by the model as if they arrived in order. Real outcomes are hidden by default and shown only behind a "Reveal what really happened" switch.
+- **Reason:** Streamlit is faster to build but looks generic, and the assignment rewards a clear decision support story. The Trust page repeats the weak spots from this log in plain words: the simple rule ties the model in the top 10%, the Same Day noon effect looks like a rule built into the dataset, and test order values are lower, so tiers need refreshing on recent data. The what-if tool rebuilds the model inputs from the training scaler. A test confirms that changing nothing reproduces the stored score, and another confirms that moving a Same Day order across noon changes the risk from below 20% to above 80%. 11 API tests pass. The Capacity and Trust pages use real outcomes, so they describe a replay of past orders and not live performance.
+- **Alternatives considered:** Streamlit. Rejected for the look and for limited control over layout. Accepting a CSV upload so users can score new orders. Not built yet: it needs the full feature pipeline in the app, which is a larger piece of work than the demo needs.
+
 <!-- Add new entries above this line -->

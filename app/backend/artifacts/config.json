@@ -1,0 +1,12 @@
+{
+ "engine": "XGBoost (tuned, Optuna on PR AUC)",
+ "formula": "priority = p_late ** alpha * Sales",
+ "alpha": 1.0,
+ "risk_threshold": 0.39,
+ "target_recall": 0.8,
+ "tier_cutoffs": {
+  "critical_min": 696.5252492259484,
+  "high_min": 397.633080352594
+ },
+ "tiers_defined_on": "validation: top 10 percent Critical, next 20 percent High"
+}
