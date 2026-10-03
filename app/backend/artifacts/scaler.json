@@ -1,0 +1,74 @@
+{
+ "features": [
+  "Sales",
+  "Order Item Quantity",
+  "Benefit per order",
+  "n_line_items",
+  "n_distinct_categories",
+  "Benefit_per_order_capped",
+  "priority_value_component",
+  "order_hour",
+  "order_dayofweek",
+  "order_month",
+  "order_is_weekend",
+  "order_is_holiday_season",
+  "sales_per_scheduled_day",
+  "is_express_shipping",
+  "country_delay_rate",
+  "region_delay_rate",
+  "Shipping Mode_First Class",
+  "Shipping Mode_Same Day",
+  "Shipping Mode_Second Class",
+  "Shipping Mode_Standard Class",
+  "Customer Segment_Consumer",
+  "Customer Segment_Corporate",
+  "Customer Segment_Home Office",
+  "Type_CASH",
+  "Type_DEBIT",
+  "Type_PAYMENT",
+  "Type_TRANSFER",
+  "category_frequency"
+ ],
+ "scaled": {
+  "Sales": {
+   "mean": 591.0867547669151,
+   "std": 338.69574521967445
+  },
+  "Order Item Quantity": {
+   "mean": 6.616195194020771,
+   "std": 4.027479934482139
+  },
+  "n_line_items": {
+   "mean": 2.9996523703993394,
+   "std": 1.4104291080849654
+  },
+  "n_distinct_categories": {
+   "mean": 2.6326206926519795,
+   "std": 1.2069284560431128
+  },
+  "Benefit_per_order_capped": {
+   "mean": 65.1118900977837,
+   "std": 175.14899650610238
+  },
+  "priority_value_component": {
+   "mean": 591.0867547669151,
+   "std": 338.69574521967445
+  },
+  "sales_per_scheduled_day": {
+   "mean": 268.57722650852963,
+   "std": 253.56737399157788
+  },
+  "country_delay_rate": {
+   "mean": 0.5484508755920566,
+   "std": 0.031931685578895114
+  },
+  "region_delay_rate": {
+   "mean": 0.5484508755920566,
+   "std": 0.012109663277842662
+  },
+  "category_frequency": {
+   "mean": 0.11607512657393641,
+   "std": 0.05799469208705753
+  }
+ }
+}
