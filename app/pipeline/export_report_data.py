@@ -144,8 +144,8 @@ def matched(p, y, targets=(0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9)):
 
 models = {}
 for m in P:
-    models[m] = {'threshold': THR[m], 'val': {'roc_auc': r4(roc_auc_score(y_va, P[m]['val'])), 'pr_auc': r4(average_precision_score(y_va, P[m]['val'])), 'at_threshold': op(P[m]['val'], y_va, THR[m]), 'at_half': op(P[m]['val'], y_va, 0.5), 'matched': matched(P[m]['val'], y_va)},
-                 'test': {'roc_auc': r4(roc_auc_score(y_te, P[m]['test'])), 'pr_auc': r4(average_precision_score(y_te, P[m]['test'])), 'at_threshold': op(P[m]['test'], y_te, THR[m])},
+    models[m] = {'threshold': THR[m], 'val': {'roc_auc': round(float(roc_auc_score(y_va, P[m]['val'])), 6), 'pr_auc': round(float(average_precision_score(y_va, P[m]['val'])), 6), 'at_threshold': op(P[m]['val'], y_va, THR[m]), 'at_half': op(P[m]['val'], y_va, 0.5), 'matched': matched(P[m]['val'], y_va)},
+                 'test': {'roc_auc': round(float(roc_auc_score(y_te, P[m]['test'])), 6), 'pr_auc': round(float(average_precision_score(y_te, P[m]['test'])), 6), 'at_threshold': op(P[m]['test'], y_te, THR[m])},
                  'sweep_val': sweep(P[m]['val'], y_va), 'sweep_test': sweep(P[m]['test'], y_te),
                  'curves_val': curves(P[m]['val'], y_va), 'curves_test': curves(P[m]['test'], y_te), 'calib_val': calib(P[m]['val'], y_va), 'calib_test': calib(P[m]['test'], y_te)}
 models['Random Forest']['params'] = json.load(open(DATA / 'optuna_rf_best_params.json')); models['XGBoost']['params'] = json.load(open(DATA / 'optuna_xgb_best_params.json'))

@@ -21,7 +21,7 @@ A web app for the DataCo operations team. It ranks orders by **chance of being l
 | Business case | Problem, users, a day with the tool, tier actions, value, recommendation and limits |
 | Trust and limits | Calibration, comparison with a simple rule, known weak spots |
 
-**How it was built** (for the viva and the demo)
+**How it was built** (the whole project, stage by stage)
 
 | Page | Source notebook |
 |---|---|
@@ -35,7 +35,7 @@ A web app for the DataCo operations team. It ranks orders by **chance of being l
 | 8. Final evaluation (Random Forest and XGBoost side by side) | 05 sections 7 and 8 |
 | 9. Prioritization | 06 |
 | 10. The app itself | app/ |
-| Decision log, Viva cheat sheet, About | DECISION_LOG.md, whole project |
+| Decision log, About | DECISION_LOG.md, whole project |
 
 **What "predict" means here:** the app scores one order at the moment it is placed. It does not forecast next week's volume. Fields you are not asked for are filled with typical training values, and the page tells you which.
 
@@ -69,6 +69,6 @@ Run the API tests with `cd app/backend && python -m pytest tests`.
 
 ## Honest limits
 
-- A two-line shipping rule reaches about the same late revenue as the model in the top 10% of the queue. The model adds a separate chance and a reason for every order.
+- A two line shipping rule reaches about the same late revenue as the model in the top 10% of the queue. The model adds a separate chance and a reason for every order.
 - Order values fell in the test period, so fewer orders reach the Critical tier there. Tier cut points should be refreshed on recent data.
 - The strong Same Day noon effect looks like a rule built into the dataset. Real operations may show a weaker one.
